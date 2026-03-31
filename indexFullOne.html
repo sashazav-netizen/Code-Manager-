@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Manager - Pro Fixed</title>
+<title>Code Manager Pro - 2026</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
@@ -28,9 +28,13 @@
     button { padding: 12px; margin: 5px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
     button:active { transform: scale(0.95); }
     
-    .btn-add { background: var(--success); width: 100%; margin-top: 10px; }
+    /* כפתור הוספה (ירוק) */
+    .btn-add { background: var(--success); width: 100%; margin-top: 10px; box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.3); }
+    .btn-add:hover { background: #16a34a; }
+    
     .btn-primary { background: var(--primary); }
     .btn-ghost { background: #64748b; }
+    .btn-logout { background: var(--danger); padding: 8px 15px; font-size: 12px; margin-bottom: 15px; }
     
     .backup-zone { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
     .btn-backup { background: #1e293b; border: 1px solid #334155; font-size: 11px; padding: 8px 12px; flex: 1; min-width: 100px; }
@@ -39,7 +43,8 @@
     td, th { padding: 14px; border-bottom: 1px solid #334155; text-align: right; }
     th { background: #334155; color: #94a3b8; font-size: 12px; }
 
-    .code { background: #334155; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-family: monospace; display: inline-block; }
+    .code { background: #334155; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-family: monospace; display: inline-block; transition: 0.2s; }
+    .code:hover { background: #475569; }
     
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); z-index: 1000; backdrop-filter: blur(8px); }
     .modal-box { background: #1e293b; margin: 15vh auto; max-width: 320px; border-radius: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; animation: modalIn 0.3s ease-out; }
@@ -68,6 +73,11 @@
     </div>
 
     <div id="app" style="display:none;">
+        
+        <div class="admin-only" style="display: flex; justify-content: flex-end;">
+            <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> התנתק</button>
+        </div>
+
         <div id="backupZone" class="backup-zone admin-only">
             <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
             <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> קובץ גיבוי</button>
@@ -92,7 +102,7 @@
         </div>
 
         <table>
-            <thead><tr><th>כתובת</th><th>קוד</th><th id="manageHeader" class="admin-only">ניהול</th></tr></thead>
+            <thead><tr><th>כתובת</th><th>קוד</th><th class="admin-only">ניהול</th></tr></thead>
             <tbody id="table"></tbody>
         </table>
     </div>
@@ -106,66 +116,57 @@
         <div class="modal-actions" id="modalBtns"></div>
     </div>
 </div>
-
 <div id="toast"></div>
 
 <script>
-// הגדרות בסיסיות
 const ADMIN_PASS = "1234";
 let data = JSON.parse(localStorage.getItem("data")) || [];
 let pending = JSON.parse(localStorage.getItem("pending")) || [];
 let isAdmin = false;
 
-// פונקציית התראה (Toast)
 function toast(msg, color = "#22c55e") {
     const t = document.getElementById("toast");
     t.innerText = msg; t.style.background = color; t.style.opacity = "1";
     setTimeout(() => { t.style.opacity = "0"; }, 2000);
 }
 
-// כניסה כמנהל
 function loginAdmin() {
-    const passInput = document.getElementById("password").value;
-    if (passInput === ADMIN_PASS) {
+    if (document.getElementById("password").value === ADMIN_PASS) {
         isAdmin = true;
         showApp();
-        toast("ברוך הבא מנהל");
-    } else {
-        toast("סיסמה שגויה", "#ef4444");
-    }
+        toast("שלום מנהל!");
+    } else { toast("סיסמה שגויה", "#ef4444"); }
 }
 
-// כניסה כאורח
-function loginGuest() {
+function loginGuest() { isAdmin = false; showApp(); toast("כניסת אורח", "#3b82f6"); }
+
+function logout() {
     isAdmin = false;
-    showApp();
-    toast("נכנסת כאורח", "#3b82f6");
+    document.getElementById("app").style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("password").value = "";
+    // הסתרת אלמנטים של מנהל
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    toast("התנתקת", "#64748b");
 }
 
-// פתיחת האפליקציה והצגת חלקים רלוונטיים
 function showApp() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
-    
     if (isAdmin) {
-        const adminElements = document.querySelectorAll('.admin-only');
-        adminElements.forEach(el => {
-            if (el.id === 'backupZone') el.style.display = 'flex';
-            else el.style.display = 'block';
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = (el.id === 'backupZone') ? 'flex' : 'block';
         });
     }
     render();
 }
 
-// הצגת הטבלה
 function render() {
     const term = document.getElementById("searchInput").value.toLowerCase();
-    const tableBody = document.getElementById("table");
-    
     const filtered = data.filter(d => d.address.toLowerCase().includes(term));
     filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
     
-    tableBody.innerHTML = filtered.map((d, i) => {
+    document.getElementById("table").innerHTML = filtered.map((d, i) => {
         const idx = data.indexOf(d);
         return `<tr>
             <td>${d.address}</td>
@@ -177,9 +178,8 @@ function render() {
         </tr>`;
     }).join("");
 
-    const pSection = document.getElementById("pendingSection");
     if (isAdmin && pending.length > 0) {
-        pSection.style.display = "block";
+        document.getElementById("pendingSection").style.display = "block";
         document.getElementById("pendingList").innerHTML = pending.map((p, i) => `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
                 <span>${p.address} <b>(${p.code})</b></span>
@@ -189,9 +189,7 @@ function render() {
                 </div>
             </div>
         `).join("");
-    } else {
-        pSection.style.display = "none";
-    }
+    } else { document.getElementById("pendingSection").style.display = "none"; }
 }
 
 function toggleCode(el, code) {
@@ -201,8 +199,6 @@ function toggleCode(el, code) {
         toast("הקוד הועתק!");
     } else { el.innerText = "••••"; }
 }
-
-// --- פונקציות ניהול ---
 
 function add() {
     const a = document.getElementById("address"), c = document.getElementById("code");
@@ -217,51 +213,18 @@ function approve(i) {
     data.push(pending[i]);
     pending.splice(i, 1);
     saveAll(); render();
-    toast("אושר בהצלחה ✅");
+    toast("אושר ✅");
 }
 
-function del(index) {
-    const item = data[index];
-    showModal(`
-        <div style="color:var(--danger); font-size:50px; margin-bottom:15px;"><i class="fa-solid fa-circle-exclamation"></i></div>
-        <h3>מחיקת פריט</h3>
-        <p>למחוק את <b>${item.address}</b>?</p>
-    `, `
-        <button onclick="confirmDelete(${index})" style="background:var(--danger);">כן, מחק</button>
-        <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>
-    `);
-}
-
-function edit(index) {
-    const item = data[index];
-    showModal(`
-        <h3>עריכת פריט</h3>
-        <input id="editA" value="${item.address}" style="margin-bottom:10px;">
-        <input id="editC" value="${item.code}">
-    `, `
-        <button onclick="confirmEdit(${index})" style="background:var(--success);">שמור שינויים</button>
-        <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>
-    `);
-}
-
-function confirmDelete(i) { data.splice(i, 1); saveAll(); closeModal(); render(); toast("נמחק", "#ef4444"); }
-function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("בקשה נמחקה"); }
-function confirmEdit(i) {
-    const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
-    if (nA && nC) { data[i] = { address: nA, code: nC }; saveAll(); closeModal(); render(); toast("עודכן!"); }
-}
-
-// --- גיבוי ושיחזור ---
-
+// --- Backup & Modal Logic ---
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n";
     data.forEach(item => { csv += `${item.address},${item.code}\n`; });
-    downloadFile(csv, "codes_backup.csv", "text/csv;charset=utf-8;");
+    downloadFile(csv, "backup.csv", "text/csv;charset=utf-8;");
 }
 
 function exportJSON() {
-    const str = JSON.stringify({ data, pending });
-    downloadFile(str, "CodeManager_Backup.json", "application/json");
+    downloadFile(JSON.stringify({ data, pending }), "CodeManager_Backup.json", "application/json");
 }
 
 function importJSON(event) {
@@ -271,11 +234,11 @@ function importJSON(event) {
     reader.onload = function(e) {
         try {
             const imported = JSON.parse(e.target.result);
-            if (imported.data) {
+            if (imported.data && confirm("לשחזר נתונים? זה יחליף את הקיימים.")) {
                 data = imported.data;
                 pending = imported.pending || [];
                 saveAll(); render();
-                toast("השיחזור הצליח!");
+                toast("שוחזר בהצלחה");
             }
         } catch (err) { toast("קובץ לא תקין", "#ef4444"); }
     };
@@ -290,7 +253,25 @@ function downloadFile(content, fileName, mimeType) {
     a.click();
 }
 
-// --- כללי ---
+function del(index) {
+    showModal(`<h3>מחיקה</h3><p>למחוק את <b>${data[index].address}</b>?</p>`, 
+    `<button onclick="confirmDelete(${index})" style="background:var(--danger);">כן, מחק</button>
+     <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
+}
+
+function edit(index) {
+    const item = data[index];
+    showModal(`<h3>עריכה</h3><input id="editA" value="${item.address}"><input id="editC" value="${item.code}">`, 
+    `<button onclick="confirmEdit(${index})" style="background:var(--success);">שמור</button>
+     <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
+}
+
+function confirmDelete(i) { data.splice(i, 1); saveAll(); closeModal(); render(); toast("נמחק"); }
+function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("נמחק"); }
+function confirmEdit(i) {
+    const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
+    if (nA && nC) { data[i] = { address: nA, code: nC }; saveAll(); closeModal(); render(); toast("עודכן"); }
+}
 
 function showModal(content, btns) {
     document.getElementById("modalContent").innerHTML = content;
