@@ -35,8 +35,17 @@
     table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; margin-top: 10px; backdrop-filter: blur(16px); border: 1px solid var(--border); }
     td, th { padding: 16px; border-bottom: 1px solid var(--border); text-align: right; }
     th { background: rgba(51, 65, 85, 0.5); color: #94a3b8; font-size: 12px; }
-    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; }
-    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; backdrop-filter: blur(8px); }
+    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; display: inline-block; }
+    
+    /* Modal Styles */
+    #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); }
+    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 28px; text-align: center; border: 1px solid var(--border); overflow: hidden; animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes modalIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-body { padding: 35px 25px 25px; }
+    .modal-actions { display: flex; flex-direction: column; padding: 0 25px 25px; gap: 8px; }
+    .modal-actions button { margin: 0; padding: 16px; border-radius: 16px; }
+
+    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; backdrop-filter: blur(8px); pointer-events: none; }
     footer { text-align: center; padding: 25px; font-size: 13px; color: #64748b; margin-top: auto; background: rgba(15, 23, 42, 0.6); border-top: 1px solid var(--border); }
     .admin-only { display: none; }
 </style>
@@ -88,10 +97,16 @@
 </div>
 
 <footer>© כל הזכויות שמורות - אלכסנדר זבודיסקר 2026</footer>
+
+<div id="modal">
+    <div class="modal-box">
+        <div class="modal-body" id="modalContent"></div>
+        <div class="modal-actions" id="modalBtns"></div>
+    </div>
+</div>
 <div id="toast"></div>
 
 <script>
-// הגדרות ה-Firebase שלך
 const firebaseConfig = {
   apiKey: "AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",
   authDomain: "code-manager-314c2.firebaseapp.com",
@@ -102,7 +117,6 @@ const firebaseConfig = {
   appId: "1:673454437709:web:690e62bb83290a086b3304"
 };
 
-// אתחול Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -111,7 +125,7 @@ let data = [];
 let pending = [];
 let isAdmin = false;
 
-// האזנה לשינויים בענן בזמן אמת
+// האזנה לשינויים בענן
 db.ref('codes').on('value', (snapshot) => {
     const val = snapshot.val();
     data = val ? Object.values(val) : [];
@@ -120,7 +134,7 @@ db.ref('codes').on('value', (snapshot) => {
 
 db.ref('pending').on('value', (snapshot) => {
     const val = snapshot.val();
-    pending = val ? Object.entries(val) : []; // נשמור כזוגות של [מזהה, נתונים]
+    pending = val ? Object.entries(val) : [];
     render();
 });
 
@@ -165,9 +179,10 @@ function render() {
     tableBody.innerHTML = filtered.map((d) => `
         <tr>
             <td>${d.address}</td>
-            <td><span class="code" onclick="copyCode('${d.code}')">••••</span></td>
+            <td><span class="code" onclick="toggleCode(this, '${d.code}')">••••</span></td>
             ${isAdmin ? `<td>
-                <button onclick="deleteFromCloud('${d.id}')" style="background:none; color:var(--danger);"><i class="fa-solid fa-trash"></i></button>
+                <button onclick="editItem('${d.id}')" style="background:none; color:var(--primary); padding:5px;"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="deleteFromCloud('${d.id}')" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
             </td>` : ''}
         </tr>
     `).join("");
@@ -186,21 +201,24 @@ function render() {
     } else { document.getElementById("pendingSection").style.display = "none"; }
 }
 
-function copyCode(code) {
-    navigator.clipboard.writeText(code);
-    toast("הקוד הועתק!");
+function toggleCode(el, code) {
+    if (el.innerText === "••••") {
+        el.innerText = code;
+        navigator.clipboard.writeText(code);
+        toast("הקוד הועתק!");
+    } else { el.innerText = "••••"; }
 }
 
-// פונקציות ענן
+// ענן - הוספה
 function addToCloud() {
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
-    
     db.ref('pending').push({ address: a.value, code: c.value });
     a.value = ""; c.value = "";
     toast("נשלח לאישור בענן! ☁️");
 }
 
+// ענן - אישור
 function approve(id, address, code) {
     const newId = Date.now().toString();
     db.ref('codes/' + newId).set({ id: newId, address, code });
@@ -210,18 +228,47 @@ function approve(id, address, code) {
 
 function reject(id) { db.ref('pending/' + id).remove(); toast("נמחק"); }
 
+// ענן - מחיקה
 function deleteFromCloud(id) {
-    if(confirm("למחוק מהענן?")) {
-        db.ref('codes/' + id).remove();
-        toast("נמחק מהענן");
+    showModal(`<h3>מחיקה</h3><p>למחוק פריט זה מהענן?</p>`, 
+    `<button onclick="db.ref('codes/${id}').remove(); closeModal(); toast('נמחק');" style="background:var(--danger);">מחק</button>
+     <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
+}
+
+// ענן - עריכה
+function editItem(id) {
+    const item = data.find(d => d.id === id);
+    showModal(`
+        <h3>עריכת פריט</h3>
+        <input id="editA" value="${item.address}" style="margin-bottom:10px;">
+        <input id="editC" value="${item.code}">
+    `, 
+    `<button onclick="saveEdit('${id}')" style="background:var(--success);">שמור שינויים</button>
+     <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
+}
+
+function saveEdit(id) {
+    const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
+    if (nA && nC) {
+        db.ref('codes/' + id).update({ address: nA, code: nC });
+        closeModal();
+        toast("עודכן בענן");
     }
 }
+
+// Modal Logic
+function showModal(content, btns) {
+    document.getElementById("modalContent").innerHTML = content;
+    document.getElementById("modalBtns").innerHTML = btns;
+    document.getElementById("modal").style.display = "block";
+}
+function closeModal() { document.getElementById("modal").style.display = "none"; }
 
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n";
     data.forEach(item => { csv += `${item.address},${item.code}\n`; });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "codes_backup.csv"; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "backup.csv"; a.click();
 }
 
 function exportJSON() {
