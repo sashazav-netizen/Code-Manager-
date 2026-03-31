@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Manager - Pro Fixed</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    :root {
+        --primary: #3b82f6;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --warning: #facc15;
+        --bg: #0f172a;
+        --glass-bg: rgba(30, 41, 59, 0.7);
+    }
+
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    h1 { text-align: center; padding: 20px; background: rgba(30, 41, 59, 0.8); margin: 0; border-bottom: 1px solid #334155; backdrop-filter: blur(10px); }
+
+    .container { max-width: 900px; margin: auto; padding: 20px; flex: 1; width: 100%; box-sizing: border-box; }
+    .glass { background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+
+    input { padding: 12px; margin: 5px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; width: calc(100% - 24px); box-sizing: border-box; outline: none; transition: 0.3s; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+
+    button { padding: 12px; margin: 5px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
+    button:active { transform: scale(0.95); }
+    
+    .btn-add { background: var(--success); width: 100%; margin-top: 10px; }
+    .btn-primary { background: var(--primary); }
+    .btn-ghost { background: #64748b; }
+    
+    .backup-zone { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    .btn-backup { background: #1e293b; border: 1px solid #334155; font-size: 11px; padding: 8px 12px; flex: 1; min-width: 100px; }
+    
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; margin-top: 10px; }
+    td, th { padding: 14px; border-bottom: 1px solid #334155; text-align: right; }
+    th { background: #334155; color: #94a3b8; font-size: 12px; }
+
+    .code { background: #334155; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-family: monospace; display: inline-block; }
+    
+    #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); z-index: 1000; backdrop-filter: blur(8px); }
+    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 320px; border-radius: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; animation: modalIn 0.3s ease-out; }
+    @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-body { padding: 30px 20px 20px; }
+    .modal-actions { display: flex; flex-direction: column; padding: 0 20px 20px; }
+    .modal-actions button { margin: 6px 0; padding: 14px; border-radius: 14px; }
+
+    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; pointer-events: none; }
+    
+    footer { text-align: center; padding: 20px; font-size: 13px; color: #64748b; margin-top: auto; }
+    .admin-only { display: none; }
+</style>
+</head>
+
+<body>
+
+<h1><i class="fa-solid fa-vault"></i> Code Manager</h1>
+
+<div class="container">
+    <div id="loginBox" class="glass" style="text-align:center;">
+        <h3 style="margin:0 0 15px 0;">כניסה למערכת</h3>
+        <input id="password" type="password" placeholder="סיסמת מנהל">
+        <button onclick="loginAdmin()" class="btn-primary" style="width:100%;">כניסה כמנהל</button>
+        <button onclick="loginGuest()" class="btn-ghost" style="width:100%;">כניסה כאורח</button>
+    </div>
+
+    <div id="app" style="display:none;">
+        <div id="backupZone" class="backup-zone admin-only">
+            <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
+            <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> קובץ גיבוי</button>
+            <button onclick="document.getElementById('importFile').click()" class="btn-backup" style="border-color: var(--primary);"><i class="fa-solid fa-upload"></i> שחזור</button>
+            <input type="file" id="importFile" style="display:none" onchange="importJSON(event)" accept=".json">
+        </div>
+
+        <div class="glass" style="display:flex; align-items:center;">
+            <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
+            <input id="searchInput" placeholder="חיפוש כתובת..." oninput="render()" style="background:transparent; border:none; margin:0; width: 100%;">
+        </div>
+
+        <div class="glass">
+            <input id="address" placeholder="כתובת / תיאור">
+            <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
+            <button onclick="add()" class="btn-add"><i class="fa-solid fa-paper-plane"></i> הוסף למערכת</button>
+        </div>
+
+        <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
+            <h4 style="margin:0 0 10px 0; color:var(--warning);"><i class="fa-solid fa-clock"></i> ממתין לאישור:</h4>
+            <div id="pendingList"></div>
+        </div>
+
+        <table>
+            <thead><tr><th>כתובת</th><th>קוד</th><th id="manageHeader" class="admin-only">ניהול</th></tr></thead>
+            <tbody id="table"></tbody>
+        </table>
+    </div>
+</div>
+
+<footer>© כל הזכויות שמורות - אלכסנדר זבודיסקר 2026</footer>
+
+<div id="modal">
+    <div class="modal-box">
+        <div class="modal-body" id="modalContent"></div>
+        <div class="modal-actions" id="modalBtns"></div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// הגדרות בסיסיות
+const ADMIN_PASS = "1234";
+let data = JSON.parse(localStorage.getItem("data")) || [];
+let pending = JSON.parse(localStorage.getItem("pending")) || [];
+let isAdmin = false;
+
+// פונקציית התראה (Toast)
+function toast(msg, color = "#22c55e") {
+    const t = document.getElementById("toast");
+    t.innerText = msg; t.style.background = color; t.style.opacity = "1";
+    setTimeout(() => { t.style.opacity = "0"; }, 2000);
+}
+
+// כניסה כמנהל
+function loginAdmin() {
+    const passInput = document.getElementById("password").value;
+    if (passInput === ADMIN_PASS) {
+        isAdmin = true;
+        showApp();
+        toast("ברוך הבא מנהל");
+    } else {
+        toast("סיסמה שגויה", "#ef4444");
+    }
+}
+
+// כניסה כאורח
+function loginGuest() {
+    isAdmin = false;
+    showApp();
+    toast("נכנסת כאורח", "#3b82f6");
+}
+
+// פתיחת האפליקציה והצגת חלקים רלוונטיים
+function showApp() {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    
+    if (isAdmin) {
+        const adminElements = document.querySelectorAll('.admin-only');
+        adminElements.forEach(el => {
+            if (el.id === 'backupZone') el.style.display = 'flex';
+            else el.style.display = 'block';
+        });
+    }
+    render();
+}
+
+// הצגת הטבלה
+function render() {
+    const term = document.getElementById("searchInput").value.toLowerCase();
+    const tableBody = document.getElementById("table");
+    
+    const filtered = data.filter(d => d.address.toLowerCase().includes(term));
+    filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
+    
+    tableBody.innerHTML = filtered.map((d, i) => {
+        const idx = data.indexOf(d);
+        return `<tr>
+            <td>${d.address}</td>
+            <td><span class="code" onclick="toggleCode(this, '${d.code}')">••••</span></td>
+            ${isAdmin ? `<td>
+                <button onclick="edit(${idx})" style="background:none; color:var(--primary); padding:5px;"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="del(${idx})" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
+            </td>` : ''}
+        </tr>`;
+    }).join("");
+
+    const pSection = document.getElementById("pendingSection");
+    if (isAdmin && pending.length > 0) {
+        pSection.style.display = "block";
+        document.getElementById("pendingList").innerHTML = pending.map((p, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+                <span>${p.address} <b>(${p.code})</b></span>
+                <div>
+                    <button onclick="approve(${i})" style="background:var(--success); padding:5px 12px;">אשר</button>
+                    <button onclick="delPending(${i})" style="background:var(--danger); padding:5px 12px;">מחק</button>
+                </div>
+            </div>
+        `).join("");
+    } else {
+        pSection.style.display = "none";
+    }
+}
+
+function toggleCode(el, code) {
+    if (el.innerText === "••••") {
+        el.innerText = code;
+        navigator.clipboard.writeText(code);
+        toast("הקוד הועתק!");
+    } else { el.innerText = "••••"; }
+}
+
+// --- פונקציות ניהול ---
+
+function add() {
+    const a = document.getElementById("address"), c = document.getElementById("code");
+    if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
+    pending.push({ address: a.value, code: c.value });
+    saveAll(); render();
+    a.value = ""; c.value = "";
+    toast("נשלח לאישור 🚀", "#3b82f6");
+}
+
+function approve(i) {
+    data.push(pending[i]);
+    pending.splice(i, 1);
+    saveAll(); render();
+    toast("אושר בהצלחה ✅");
+}
+
+function del(index) {
+    const item = data[index];
+    showModal(`
+        <div style="color:var(--danger); font-size:50px; margin-bottom:15px;"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <h3>מחיקת פריט</h3>
+        <p>למחוק את <b>${item.address}</b>?</p>
+    `, `
+        <button onclick="confirmDelete(${index})" style="background:var(--danger);">כן, מחק</button>
+        <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>
+    `);
+}
+
+function edit(index) {
+    const item = data[index];
+    showModal(`
+        <h3>עריכת פריט</h3>
+        <input id="editA" value="${item.address}" style="margin-bottom:10px;">
+        <input id="editC" value="${item.code}">
+    `, `
+        <button onclick="confirmEdit(${index})" style="background:var(--success);">שמור שינויים</button>
+        <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>
+    `);
+}
+
+function confirmDelete(i) { data.splice(i, 1); saveAll(); closeModal(); render(); toast("נמחק", "#ef4444"); }
+function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("בקשה נמחקה"); }
+function confirmEdit(i) {
+    const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
+    if (nA && nC) { data[i] = { address: nA, code: nC }; saveAll(); closeModal(); render(); toast("עודכן!"); }
+}
+
+// --- גיבוי ושיחזור ---
+
+function exportCSV() {
+    let csv = "\ufeffכתובת,קוד\n";
+    data.forEach(item => { csv += `${item.address},${item.code}\n`; });
+    downloadFile(csv, "codes_backup.csv", "text/csv;charset=utf-8;");
+}
+
+function exportJSON() {
+    const str = JSON.stringify({ data, pending });
+    downloadFile(str, "CodeManager_Backup.json", "application/json");
+}
+
+function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.data) {
+                data = imported.data;
+                pending = imported.pending || [];
+                saveAll(); render();
+                toast("השיחזור הצליח!");
+            }
+        } catch (err) { toast("קובץ לא תקין", "#ef4444"); }
+    };
+    reader.readAsText(file);
+}
+
+function downloadFile(content, fileName, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+}
+
+// --- כללי ---
+
+function showModal(content, btns) {
+    document.getElementById("modalContent").innerHTML = content;
+    document.getElementById("modalBtns").innerHTML = btns;
+    document.getElementById("modal").style.display = "block";
+}
+function closeModal { document.getElementById("modal").style.display = "none"; }
+function saveAll() {
+    localStorage.setItem("data", JSON.stringify(data));
+    localStorage.setItem("pending", JSON.stringify(pending));
+}
+</script>
+</body>
+</html>
