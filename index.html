@@ -67,7 +67,6 @@
     .btn-primary { background: var(--primary); }
     .btn-ghost { background: rgba(100, 116, 139, 0.3); border: 1px solid rgba(255,255,255,0.1); }
     
-    /* כפתור יציאה שיופיע תמיד כשהאפליקציה פתוחה */
     .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 18px; font-size: 13px; margin-bottom: 15px; color: #fca5a5; }
     .btn-logout:hover { background: var(--danger); color: white; }
     
@@ -114,7 +113,6 @@
     </div>
 
     <div id="app" style="display:none;">
-        
         <div style="display: flex; justify-content: flex-end;">
             <button onclick="logout()" class="btn-logout">
                 <i class="fa-solid fa-right-from-bracket"></i> יציאה
@@ -147,7 +145,7 @@
         </div>
 
         <table>
-            <thead><tr><th>כתובת</th><th>קוד</th><th id="adminHeader" class="admin-only">ניהול</th></tr></thead>
+            <thead><tr><th>כתובת</th><th>קוד</th><th class="admin-only">ניהול</th></tr></thead>
             <tbody id="table"></tbody>
         </table>
     </div>
@@ -165,8 +163,8 @@
 
 <script>
 const ADMIN_PASS = "1234";
-let data = JSON.parse(localStorage.getItem("data")) || [];
-let pending = JSON.parse(localStorage.getItem("pending")) || [];
+let data = [];
+let pending = [];
 let isAdmin = false;
 
 function toast(msg, color = "#22c55e") {
@@ -202,6 +200,10 @@ function showApp() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
     
+    // רענון נתונים מהזיכרון בכל כניסה
+    data = JSON.parse(localStorage.getItem("data")) || [];
+    pending = JSON.parse(localStorage.getItem("pending")) || [];
+    
     if (isAdmin) {
         document.querySelectorAll('.admin-only').forEach(el => {
             if (el.id === 'backupZone') el.style.display = 'flex';
@@ -213,11 +215,10 @@ function showApp() {
 
 function render() {
     const term = document.getElementById("searchInput").value.toLowerCase();
-    const tableBody = document.getElementById("table");
     const filtered = data.filter(d => d.address.toLowerCase().includes(term));
     filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
     
-    tableBody.innerHTML = filtered.map((d, i) => {
+    document.getElementById("table").innerHTML = filtered.map((d, i) => {
         const idx = data.indexOf(d);
         return `<tr>
             <td>${d.address}</td>
@@ -229,18 +230,19 @@ function render() {
         </tr>`;
     }).join("");
 
+    const pSection = document.getElementById("pendingSection");
     if (isAdmin && pending.length > 0) {
-        document.getElementById("pendingSection").style.display = "block";
+        pSection.style.display = "block";
         document.getElementById("pendingList").innerHTML = pending.map((p, i) => `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
-                <span>${p.address}</span>
+                <span>${p.address} <b>(${p.code})</b></span>
                 <div style="display:flex; gap:5px;">
                     <button onclick="approve(${i})" style="background:var(--success); padding:5px 10px; font-size:12px;">אשר</button>
                     <button onclick="delPending(${i})" style="background:var(--danger); padding:5px 10px; font-size:12px;">מחק</button>
                 </div>
             </div>
         `).join("");
-    } else { document.getElementById("pendingSection").style.display = "none"; }
+    } else { pSection.style.display = "none"; }
 }
 
 function toggleCode(el, code) {
@@ -254,8 +256,13 @@ function toggleCode(el, code) {
 function add() {
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
+    
+    // קריאת רשימת הממתינים מהזיכרון לפני הוספה
+    pending = JSON.parse(localStorage.getItem("pending")) || [];
     pending.push({ address: a.value, code: c.value });
-    saveAll(); render();
+    
+    saveAll(); 
+    render();
     a.value = ""; c.value = "";
     toast("נשלח לאישור 🚀", "#3b82f6");
 }
@@ -269,6 +276,12 @@ function approve(i) {
 
 function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("נמחק"); }
 
+function saveAll() {
+    localStorage.setItem("data", JSON.stringify(data));
+    localStorage.setItem("pending", JSON.stringify(pending));
+}
+
+// --- Backup & Modal Logic ---
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n";
     data.forEach(item => { csv += `${item.address},${item.code}\n`; });
@@ -330,10 +343,6 @@ function showModal(content, btns) {
     document.getElementById("modal").style.display = "block";
 }
 function closeModal() { document.getElementById("modal").style.display = "none"; }
-function saveAll() {
-    localStorage.setItem("data", JSON.stringify(data));
-    localStorage.setItem("pending", JSON.stringify(pending));
-}
 </script>
 </body>
 </html>
