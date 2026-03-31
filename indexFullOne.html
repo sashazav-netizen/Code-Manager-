@@ -12,70 +12,113 @@
         --success: #22c55e;
         --danger: #ef4444;
         --warning: #facc15;
-        --bg: #0f172a;
-        --glass-bg: rgba(30, 41, 59, 0.7);
+        --glass-bg: rgba(15, 23, 42, 0.7);
+        --border: rgba(255, 255, 255, 0.08);
     }
 
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
-    h1 { text-align: center; padding: 20px; background: rgba(30, 41, 59, 0.8); margin: 0; border-bottom: 1px solid #334155; backdrop-filter: blur(10px); }
+    body { 
+        font-family: 'Segoe UI', system-ui, sans-serif; 
+        color: white; 
+        margin: 0; 
+        min-height: 100vh; 
+        display: flex; 
+        flex-direction: column;
+        background-image: url('https://i.postimg.cc/90F762pz/background.png');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+    }
+
+    h1 { 
+        text-align: center; 
+        padding: 20px 0; 
+        background: rgba(15, 23, 42, 0.6); 
+        margin: 0; 
+        border-bottom: 1px solid var(--border); 
+        backdrop-filter: blur(12px); 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 15px;
+    }
+    
+    .header-logo { height: 40px; width: auto; }
 
     .container { max-width: 900px; margin: auto; padding: 20px; flex: 1; width: 100%; box-sizing: border-box; }
-    .glass { background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-
-    input { padding: 12px; margin: 5px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; width: calc(100% - 24px); box-sizing: border-box; outline: none; transition: 0.3s; }
-    input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
-
-    button { padding: 12px; margin: 5px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
-    button:active { transform: scale(0.95); }
     
-    /* כפתור הוספה (ירוק) */
-    .btn-add { background: var(--success); width: 100%; margin-top: 10px; box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.3); }
-    .btn-add:hover { background: #16a34a; }
+    .glass { 
+        background: var(--glass-bg); 
+        backdrop-filter: blur(16px); 
+        border: 1px solid var(--border); 
+        border-radius: 16px; 
+        padding: 18px; 
+        margin-bottom: 15px; 
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    input { padding: 14px; margin: 5px; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: calc(100% - 28px); box-sizing: border-box; outline: none; transition: 0.3s; font-size: 15px;}
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); background: rgba(30, 41, 59, 0.8); }
+
+    button { padding: 14px; margin: 5px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    button:active { transform: scale(0.96); }
     
+    .btn-add { background: var(--success); width: 100%; margin-top: 12px; }
     .btn-primary { background: var(--primary); }
-    .btn-ghost { background: #64748b; }
-    .btn-logout { background: var(--danger); padding: 8px 15px; font-size: 12px; margin-bottom: 15px; }
+    .btn-ghost { background: rgba(100, 116, 139, 0.3); border: 1px solid rgba(255,255,255,0.1); }
     
-    .backup-zone { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-    .btn-backup { background: #1e293b; border: 1px solid #334155; font-size: 11px; padding: 8px 12px; flex: 1; min-width: 100px; }
+    /* כפתור יציאה שיופיע תמיד כשהאפליקציה פתוחה */
+    .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 18px; font-size: 13px; margin-bottom: 15px; color: #fca5a5; }
+    .btn-logout:hover { background: var(--danger); color: white; }
     
-    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; margin-top: 10px; }
-    td, th { padding: 14px; border-bottom: 1px solid #334155; text-align: right; }
-    th { background: #334155; color: #94a3b8; font-size: 12px; }
+    .backup-zone { display: none; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .btn-backup { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; min-width: 105px; }
+    
+    table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; margin-top: 10px; backdrop-filter: blur(16px); border: 1px solid var(--border); }
+    td, th { padding: 16px; border-bottom: 1px solid var(--border); text-align: right; }
+    th { background: rgba(51, 65, 85, 0.5); color: #94a3b8; font-size: 12px; }
 
-    .code { background: #334155; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-family: monospace; display: inline-block; transition: 0.2s; }
-    .code:hover { background: #475569; }
+    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: 'Consolas', monospace; display: inline-block; transition: 0.2s; }
     
-    #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); z-index: 1000; backdrop-filter: blur(8px); }
-    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 320px; border-radius: 24px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; animation: modalIn 0.3s ease-out; }
-    @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-body { padding: 30px 20px 20px; }
-    .modal-actions { display: flex; flex-direction: column; padding: 0 20px 20px; }
-    .modal-actions button { margin: 6px 0; padding: 14px; border-radius: 14px; }
+    #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); }
+    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 28px; text-align: center; border: 1px solid var(--border); overflow: hidden; animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes modalIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-body { padding: 35px 25px 25px; }
+    .modal-actions { display: flex; flex-direction: column; padding: 0 25px 25px; gap: 8px; }
+    .modal-actions button { margin: 0; padding: 16px; border-radius: 16px; }
 
-    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; pointer-events: none; }
+    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; pointer-events: none; backdrop-filter: blur(8px); }
     
-    footer { text-align: center; padding: 20px; font-size: 13px; color: #64748b; margin-top: auto; }
+    footer { text-align: center; padding: 25px; font-size: 13px; color: #64748b; margin-top: auto; background: rgba(15, 23, 42, 0.6); border-top: 1px solid var(--border); }
     .admin-only { display: none; }
 </style>
 </head>
 
 <body>
 
-<h1><i class="fa-solid fa-vault"></i> Code Manager</h1>
+<h1>
+    <img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo">
+    Code Manager
+</h1>
 
 <div class="container">
     <div id="loginBox" class="glass" style="text-align:center;">
         <h3 style="margin:0 0 15px 0;">כניסה למערכת</h3>
         <input id="password" type="password" placeholder="סיסמת מנהל">
-        <button onclick="loginAdmin()" class="btn-primary" style="width:100%;">כניסה כמנהל</button>
-        <button onclick="loginGuest()" class="btn-ghost" style="width:100%;">כניסה כאורח</button>
+        <button onclick="loginAdmin()" class="btn-primary" style="width:100%; margin-top:10px;">
+            <i class="fa-solid fa-user-shield"></i> כניסה כמנהל
+        </button>
+        <button onclick="loginGuest()" class="btn-ghost" style="width:100%; margin-top:10px;">
+            <i class="fa-solid fa-eye"></i> כניסה כאורח
+        </button>
     </div>
 
     <div id="app" style="display:none;">
         
-        <div class="admin-only" style="display: flex; justify-content: flex-end;">
-            <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> התנתק</button>
+        <div style="display: flex; justify-content: flex-end;">
+            <button onclick="logout()" class="btn-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> יציאה
+            </button>
         </div>
 
         <div id="backupZone" class="backup-zone admin-only">
@@ -93,7 +136,9 @@
         <div class="glass">
             <input id="address" placeholder="כתובת / תיאור">
             <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
-            <button onclick="add()" class="btn-add"><i class="fa-solid fa-paper-plane"></i> הוסף למערכת</button>
+            <button onclick="add()" class="btn-add">
+                <i class="fa-solid fa-paper-plane"></i> הוסף למערכת
+            </button>
         </div>
 
         <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
@@ -102,7 +147,7 @@
         </div>
 
         <table>
-            <thead><tr><th>כתובת</th><th>קוד</th><th class="admin-only">ניהול</th></tr></thead>
+            <thead><tr><th>כתובת</th><th>קוד</th><th id="adminHeader" class="admin-only">ניהול</th></tr></thead>
             <tbody id="table"></tbody>
         </table>
     </div>
@@ -138,24 +183,29 @@ function loginAdmin() {
     } else { toast("סיסמה שגויה", "#ef4444"); }
 }
 
-function loginGuest() { isAdmin = false; showApp(); toast("כניסת אורח", "#3b82f6"); }
+function loginGuest() { 
+    isAdmin = false; 
+    showApp(); 
+    toast("כניסת אורח", "#3b82f6"); 
+}
 
 function logout() {
     isAdmin = false;
     document.getElementById("app").style.display = "none";
     document.getElementById("loginBox").style.display = "block";
     document.getElementById("password").value = "";
-    // הסתרת אלמנטים של מנהל
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-    toast("התנתקת", "#64748b");
+    toast("יצאת מהמערכת", "#64748b");
 }
 
 function showApp() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
+    
     if (isAdmin) {
         document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = (el.id === 'backupZone') ? 'flex' : 'block';
+            if (el.id === 'backupZone') el.style.display = 'flex';
+            else el.style.display = 'block';
         });
     }
     render();
@@ -163,10 +213,11 @@ function showApp() {
 
 function render() {
     const term = document.getElementById("searchInput").value.toLowerCase();
+    const tableBody = document.getElementById("table");
     const filtered = data.filter(d => d.address.toLowerCase().includes(term));
     filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
     
-    document.getElementById("table").innerHTML = filtered.map((d, i) => {
+    tableBody.innerHTML = filtered.map((d, i) => {
         const idx = data.indexOf(d);
         return `<tr>
             <td>${d.address}</td>
@@ -181,11 +232,11 @@ function render() {
     if (isAdmin && pending.length > 0) {
         document.getElementById("pendingSection").style.display = "block";
         document.getElementById("pendingList").innerHTML = pending.map((p, i) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
-                <span>${p.address} <b>(${p.code})</b></span>
-                <div>
-                    <button onclick="approve(${i})" style="background:var(--success); padding:5px 12px;">אשר</button>
-                    <button onclick="delPending(${i})" style="background:var(--danger); padding:5px 12px;">מחק</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
+                <span>${p.address}</span>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="approve(${i})" style="background:var(--success); padding:5px 10px; font-size:12px;">אשר</button>
+                    <button onclick="delPending(${i})" style="background:var(--danger); padding:5px 10px; font-size:12px;">מחק</button>
                 </div>
             </div>
         `).join("");
@@ -216,15 +267,16 @@ function approve(i) {
     toast("אושר ✅");
 }
 
-// --- Backup & Modal Logic ---
+function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("נמחק"); }
+
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n";
     data.forEach(item => { csv += `${item.address},${item.code}\n`; });
-    downloadFile(csv, "backup.csv", "text/csv;charset=utf-8;");
+    downloadFile(csv, "codes.csv", "text/csv;charset=utf-8;");
 }
 
 function exportJSON() {
-    downloadFile(JSON.stringify({ data, pending }), "CodeManager_Backup.json", "application/json");
+    downloadFile(JSON.stringify({ data, pending }), "backup.json", "application/json");
 }
 
 function importJSON(event) {
@@ -234,11 +286,11 @@ function importJSON(event) {
     reader.onload = function(e) {
         try {
             const imported = JSON.parse(e.target.result);
-            if (imported.data && confirm("לשחזר נתונים? זה יחליף את הקיימים.")) {
+            if (imported.data && confirm("לשחזר נתונים?")) {
                 data = imported.data;
                 pending = imported.pending || [];
                 saveAll(); render();
-                toast("שוחזר בהצלחה");
+                toast("שוחזר!");
             }
         } catch (err) { toast("קובץ לא תקין", "#ef4444"); }
     };
@@ -255,7 +307,7 @@ function downloadFile(content, fileName, mimeType) {
 
 function del(index) {
     showModal(`<h3>מחיקה</h3><p>למחוק את <b>${data[index].address}</b>?</p>`, 
-    `<button onclick="confirmDelete(${index})" style="background:var(--danger);">כן, מחק</button>
+    `<button onclick="confirmDelete(${index})" style="background:var(--danger);">מחק</button>
      <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
 }
 
@@ -267,7 +319,6 @@ function edit(index) {
 }
 
 function confirmDelete(i) { data.splice(i, 1); saveAll(); closeModal(); render(); toast("נמחק"); }
-function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("נמחק"); }
 function confirmEdit(i) {
     const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
     if (nA && nC) { data[i] = { address: nA, code: nC }; saveAll(); closeModal(); render(); toast("עודכן"); }
