@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Manager Cloud - 2026</title>
+<title>Code Manager Cloud Pro - 2026</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -23,7 +23,6 @@
     .container { max-width: 900px; margin: auto; padding: 20px; flex: 1; width: 100%; box-sizing: border-box; }
     .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
     input { padding: 14px; margin: 5px; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: calc(100% - 28px); box-sizing: border-box; outline: none; font-size: 15px; }
-    input:focus { border-color: var(--primary); background: rgba(30, 41, 59, 0.8); }
     button { padding: 14px; margin: 5px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     button:active { transform: scale(0.96); }
     .btn-add { background: var(--success); width: 100%; margin-top: 12px; }
@@ -31,19 +30,18 @@
     .btn-ghost { background: rgba(100, 116, 139, 0.3); border: 1px solid rgba(255,255,255,0.1); }
     .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 18px; font-size: 13px; margin-bottom: 15px; color: #fca5a5; }
     .backup-zone { display: none; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
-    .btn-backup { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; }
+    .btn-backup { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; min-width: 100px; }
     table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; margin-top: 10px; backdrop-filter: blur(16px); border: 1px solid var(--border); }
     td, th { padding: 16px; border-bottom: 1px solid var(--border); text-align: right; }
     th { background: rgba(51, 65, 85, 0.5); color: #94a3b8; font-size: 12px; }
     .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; display: inline-block; }
     
-    /* Modal Styles */
+    /* Modal */
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); }
-    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 28px; text-align: center; border: 1px solid var(--border); overflow: hidden; animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes modalIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-body { padding: 35px 25px 25px; }
-    .modal-actions { display: flex; flex-direction: column; padding: 0 25px 25px; gap: 8px; }
-    .modal-actions button { margin: 0; padding: 16px; border-radius: 16px; }
+    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
+    .modal-body { padding: 30px 20px; text-align: center; }
+    .modal-actions { display: flex; flex-direction: column; padding: 0 20px 20px; gap: 8px; }
+    .modal-actions button { margin: 0; padding: 15px; border-radius: 12px; }
 
     #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; backdrop-filter: blur(8px); pointer-events: none; }
     footer { text-align: center; padding: 25px; font-size: 13px; color: #64748b; margin-top: auto; background: rgba(15, 23, 42, 0.6); border-top: 1px solid var(--border); }
@@ -70,13 +68,17 @@
 
         <div id="backupZone" class="backup-zone admin-only">
             <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
-            <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> גיבוי ידני</button>
+            <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> גיבוי</button>
+            <button onclick="document.getElementById('importFile').click()" class="btn-backup" style="border-color: var(--primary);"><i class="fa-solid fa-upload"></i> שחזור</button>
+            <input type="file" id="importFile" style="display:none" onchange="importToCloud(event)" accept=".json">
         </div>
 
         <div class="glass" style="display:flex; align-items:center;">
             <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
             <input id="searchInput" placeholder="חיפוש כתובת..." oninput="render()" style="background:transparent; border:none; margin:0; width: 100%;">
         </div>
+
+        <div id="stats" style="font-size: 12px; color: #94a3b8; margin-bottom: 5px; text-align: left; padding: 0 5px;"></div>
 
         <div class="glass">
             <input id="address" placeholder="כתובת / תיאור">
@@ -119,23 +121,18 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+let data = [], pending = [], isAdmin = false;
 
-const ADMIN_PASS = "1234";
-let data = [];
-let pending = [];
-let isAdmin = false;
-
-// האזנה לשינויים בענן
-db.ref('codes').on('value', (snapshot) => {
-    const val = snapshot.val();
-    data = val ? Object.values(val) : [];
-    render();
+db.ref('codes').on('value', (s) => { 
+    const val = s.val();
+    data = val ? Object.values(val) : []; 
+    render(); 
 });
 
-db.ref('pending').on('value', (snapshot) => {
-    const val = snapshot.val();
-    pending = val ? Object.entries(val) : [];
-    render();
+db.ref('pending').on('value', (s) => { 
+    const val = s.val();
+    pending = val ? Object.entries(val) : []; 
+    render(); 
 });
 
 function toast(msg, color = "#22c55e") {
@@ -145,12 +142,11 @@ function toast(msg, color = "#22c55e") {
 }
 
 function loginAdmin() {
-    if (document.getElementById("password").value === ADMIN_PASS) {
-        isAdmin = true; showApp(); toast("שלום מנהל!");
-    } else { toast("סיסמה שגויה", "#ef4444"); }
+    if (document.getElementById("password").value === "1234") { isAdmin = true; showApp(); toast("שלום מנהל"); }
+    else { toast("סיסמה שגויה", "#ef4444"); }
 }
 
-function loginGuest() { isAdmin = false; showApp(); toast("כניסת אורח", "#3b82f6"); }
+function loginGuest() { isAdmin = false; showApp(); toast("כניסת אורח"); }
 
 function logout() {
     isAdmin = false;
@@ -162,63 +158,52 @@ function logout() {
 function showApp() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
-    if (isAdmin) {
-        document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = (el.id === 'backupZone') ? 'flex' : 'block';
-        });
-    }
+    if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = (el.id === 'backupZone') ? 'flex' : 'block');
     render();
 }
 
 function render() {
     const term = document.getElementById("searchInput").value.toLowerCase();
-    const tableBody = document.getElementById("table");
     const filtered = data.filter(d => d.address.toLowerCase().includes(term));
     filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
     
-    tableBody.innerHTML = filtered.map((d) => `
+    document.getElementById("stats").innerText = "סה\"כ: " + filtered.length + " פריטים";
+    
+    document.getElementById("table").innerHTML = filtered.map(d => `
         <tr>
             <td>${d.address}</td>
             <td><span class="code" onclick="toggleCode(this, '${d.code}')">••••</span></td>
             ${isAdmin ? `<td>
                 <button onclick="editItem('${d.id}')" style="background:none; color:var(--primary); padding:5px;"><i class="fa-solid fa-pen"></i></button>
-                <button onclick="deleteFromCloud('${d.id}')" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
+                <button onclick="confirmDelete('${d.id}', '${d.address}')" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
             </td>` : ''}
-        </tr>
-    `).join("");
+        </tr>`).join("");
 
     if (isAdmin && pending.length > 0) {
         document.getElementById("pendingSection").style.display = "block";
         document.getElementById("pendingList").innerHTML = pending.map(([id, p]) => `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
-                <span>${p.address} <b>(${p.code})</b></span>
+                <span style="font-size:14px;">${p.address} <b>(${p.code})</b></span>
                 <div style="display:flex; gap:5px;">
                     <button onclick="approve('${id}', '${p.address}', '${p.code}')" style="background:var(--success); padding:5px 10px; font-size:12px;">אשר</button>
-                    <button onclick="reject('${id}')" style="background:var(--danger); padding:5px 10px; font-size:12px;">מחק</button>
+                    <button onclick="db.ref('pending/'+'${id}').remove()" style="background:var(--danger); padding:5px 10px; font-size:12px;">מחק</button>
                 </div>
-            </div>
-        `).join("");
+            </div>`).join("");
     } else { document.getElementById("pendingSection").style.display = "none"; }
 }
 
 function toggleCode(el, code) {
-    if (el.innerText === "••••") {
-        el.innerText = code;
-        navigator.clipboard.writeText(code);
-        toast("הקוד הועתק!");
-    } else { el.innerText = "••••"; }
+    if (el.innerText === "••••") { el.innerText = code; navigator.clipboard.writeText(code); toast("הועתק!"); }
+    else { el.innerText = "••••"; }
 }
 
-// ענן - הוספה
 function addToCloud() {
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
     db.ref('pending').push({ address: a.value, code: c.value });
-    a.value = ""; c.value = "";
-    toast("נשלח לאישור בענן! ☁️");
+    a.value = ""; c.value = ""; toast("נשלח לאישור ☁️", "#3b82f6");
 }
 
-// ענן - אישור
 function approve(id, address, code) {
     const newId = Date.now().toString();
     db.ref('codes/' + newId).set({ id: newId, address, code });
@@ -226,23 +211,18 @@ function approve(id, address, code) {
     toast("אושר וסונכרן!");
 }
 
-function reject(id) { db.ref('pending/' + id).remove(); toast("נמחק"); }
-
-// ענן - מחיקה
-function deleteFromCloud(id) {
-    showModal(`<h3>מחיקה</h3><p>למחוק פריט זה מהענן?</p>`, 
-    `<button onclick="db.ref('codes/${id}').remove(); closeModal(); toast('נמחק');" style="background:var(--danger);">מחק</button>
+// פונקציות עריכה ומחיקה עם מודל
+function confirmDelete(id, name) {
+    showModal(`<h3>מחיקה</h3><p>האם למחוק את <b>${name}</b>?</p>`, 
+    `<button onclick="db.ref('codes/${id}').remove(); closeModal(); toast('נמחק');" style="background:var(--danger);">מחק לצמיתות</button>
      <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
 }
 
-// ענן - עריכה
 function editItem(id) {
     const item = data.find(d => d.id === id);
-    showModal(`
-        <h3>עריכת פריט</h3>
+    showModal(`<h3>עריכה</h3>
         <input id="editA" value="${item.address}" style="margin-bottom:10px;">
-        <input id="editC" value="${item.code}">
-    `, 
+        <input id="editC" value="${item.code}">`, 
     `<button onclick="saveEdit('${id}')" style="background:var(--success);">שמור שינויים</button>
      <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
 }
@@ -251,9 +231,27 @@ function saveEdit(id) {
     const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
     if (nA && nC) {
         db.ref('codes/' + id).update({ address: nA, code: nC });
-        closeModal();
-        toast("עודכן בענן");
+        closeModal(); toast("עודכן בהצלחה");
     }
+}
+
+function importToCloud(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const imported = JSON.parse(ev.target.result);
+            if (confirm("לשחזר " + imported.length + " פריטים לענן?")) {
+                imported.forEach(item => {
+                    const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                    db.ref('codes/' + id).set({ id, address: item.address, code: item.code });
+                });
+                toast("שוחזר בהצלחה");
+            }
+        } catch(err) { toast("קובץ לא תקין", "#ef4444"); }
+    };
+    reader.readAsText(file);
 }
 
 // Modal Logic
@@ -264,16 +262,16 @@ function showModal(content, btns) {
 }
 function closeModal() { document.getElementById("modal").style.display = "none"; }
 
-function exportCSV() {
-    let csv = "\ufeffכתובת,קוד\n";
-    data.forEach(item => { csv += `${item.address},${item.code}\n`; });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "backup.csv"; a.click();
-}
-
 function exportJSON() {
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "backup.json"; a.click();
+    const a = document.createElement("a");
+    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+    a.download = "backup.json"; a.click();
+}
+function exportCSV() {
+    let csv = "\ufeffכתובת,קוד\n" + data.map(i => `${i.address},${i.code}`).join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = "backup.csv"; a.click();
 }
 </script>
 </body>
