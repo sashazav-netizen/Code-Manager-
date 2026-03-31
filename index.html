@@ -297,7 +297,7 @@ function showModal(content, btns) {
     document.getElementById("modalBtns").innerHTML = btns;
     document.getElementById("modal").style.display = "block";
 }
-function closeModal { document.getElementById("modal").style.display = "none"; }
+function closeModal() { document.getElementById("modal").style.display = "none"; }
 function saveAll() {
     localStorage.setItem("data", JSON.stringify(data));
     localStorage.setItem("pending", JSON.stringify(pending));
