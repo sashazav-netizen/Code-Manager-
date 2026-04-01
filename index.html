@@ -18,6 +18,10 @@
         font-family: 'Segoe UI', sans-serif; color: white; margin: 0; min-height: 100vh; display: flex; flex-direction: column;
         background-image: url('https://i.postimg.cc/90F762pz/background.png'); background-size: cover; background-position: center; background-attachment: fixed;
     }
+    
+    /* Wrapper להסתרה עד אישור */
+    #mainContent { display: none; flex-direction: column; min-height: 100vh; }
+
     h1 { text-align: center; padding: 20px 0; background: rgba(15, 23, 42, 0.6); margin: 0; border-bottom: 1px solid var(--border); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 15px; }
     .header-logo { height: 40px; width: auto; }
     .container { max-width: 900px; margin: auto; padding: 20px; flex: 1; width: 100%; box-sizing: border-box; }
@@ -51,54 +55,56 @@
 
 <body>
 
-<h1><img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo"> Code Manager Cloud</h1>
+<div id="mainContent">
+    <h1><img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo"> Code Manager Cloud</h1>
 
-<div class="container">
-    <div id="loginBox" class="glass" style="text-align:center;">
-        <h3 style="margin:0 0 15px 0;">כניסה למערכת ענן</h3>
-        <input id="password" type="password" placeholder="סיסמת מנהל">
-        <button onclick="loginAdmin()" class="btn-primary" style="width:100%; margin-top:10px;"><i class="fa-solid fa-user-shield"></i> כניסה כמנהל</button>
-        <button onclick="loginGuest()" class="btn-ghost" style="width:100%; margin-top:10px;"><i class="fa-solid fa-eye"></i> כניסה כאורח</button>
+    <div class="container">
+        <div id="loginBox" class="glass" style="text-align:center;">
+            <h3 style="margin:0 0 15px 0;">כניסה למערכת ענן</h3>
+            <input id="password" type="password" placeholder="סיסמת מנהל">
+            <button onclick="loginAdmin()" class="btn-primary" style="width:100%; margin-top:10px;"><i class="fa-solid fa-user-shield"></i> כניסה כמנהל</button>
+            <button onclick="loginGuest()" class="btn-ghost" style="width:100%; margin-top:10px;"><i class="fa-solid fa-eye"></i> כניסה כאורח</button>
+        </div>
+
+        <div id="app" style="display:none;">
+            <div style="display: flex; justify-content: flex-end;">
+                <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
+            </div>
+
+            <div id="backupZone" class="backup-zone admin-only">
+                <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
+                <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> גיבוי</button>
+                <button onclick="document.getElementById('importFile').click()" class="btn-backup" style="border-color: var(--primary);"><i class="fa-solid fa-upload"></i> שחזור</button>
+                <input type="file" id="importFile" style="display:none" onchange="importToCloud(event)" accept=".json">
+            </div>
+
+            <div class="glass" style="display:flex; align-items:center;">
+                <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
+                <input id="searchInput" placeholder="חיפוש כתובת..." oninput="render()" style="background:transparent; border:none; margin:0; width: 100%;">
+            </div>
+
+            <div id="stats" style="font-size: 12px; color: #94a3b8; margin-bottom: 5px; text-align: left; padding: 0 5px;"></div>
+
+            <div class="glass">
+                <input id="address" placeholder="כתובת / תיאור">
+                <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
+                <button onclick="addToCloud()" class="btn-add"><i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן</button>
+            </div>
+
+            <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
+                <h4 style="margin:0 0 10px 0; color:var(--warning);"><i class="fa-solid fa-clock"></i> בקשות ממתינות:</h4>
+                <div id="pendingList"></div>
+            </div>
+
+            <table>
+                <thead><tr><th>כתובת</th><th>קוד</th><th class="admin-only">ניהול</th></tr></thead>
+                <tbody id="table"></tbody>
+            </table>
+        </div>
     </div>
 
-    <div id="app" style="display:none;">
-        <div style="display: flex; justify-content: flex-end;">
-            <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
-        </div>
-
-        <div id="backupZone" class="backup-zone admin-only">
-            <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
-            <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> גיבוי</button>
-            <button onclick="document.getElementById('importFile').click()" class="btn-backup" style="border-color: var(--primary);"><i class="fa-solid fa-upload"></i> שחזור</button>
-            <input type="file" id="importFile" style="display:none" onchange="importToCloud(event)" accept=".json">
-        </div>
-
-        <div class="glass" style="display:flex; align-items:center;">
-            <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
-            <input id="searchInput" placeholder="חיפוש כתובת..." oninput="render()" style="background:transparent; border:none; margin:0; width: 100%;">
-        </div>
-
-        <div id="stats" style="font-size: 12px; color: #94a3b8; margin-bottom: 5px; text-align: left; padding: 0 5px;"></div>
-
-        <div class="glass">
-            <input id="address" placeholder="כתובת / תיאור">
-            <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
-            <button onclick="addToCloud()" class="btn-add"><i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן</button>
-        </div>
-
-        <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
-            <h4 style="margin:0 0 10px 0; color:var(--warning);"><i class="fa-solid fa-clock"></i> בקשות ממתינות:</h4>
-            <div id="pendingList"></div>
-        </div>
-
-        <table>
-            <thead><tr><th>כתובת</th><th>קוד</th><th class="admin-only">ניהול</th></tr></thead>
-            <tbody id="table"></tbody>
-        </table>
-    </div>
+    <footer>© כל הזכויות שמורות - אלכסנדר זבודיסקר 2026</footer>
 </div>
-
-<footer>© כל הזכויות שמורות - אלכסנדר זבודיסקר 2026</footer>
 
 <div id="modal">
     <div class="modal-box">
@@ -122,6 +128,25 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let data = [], pending = [], isAdmin = false;
+
+// הפעלת חלון אישור מיד עם טעינת הדף
+window.onload = function() {
+    showModal(`<h3>הצהרת פרטיות</h3><p>אני מאשר שהשימוש במידע לצורכי העבודה בלבד.</p>`, 
+    `<button onclick="confirmEntry()" style="background:var(--success);">אישור - המשך</button>
+     <button onclick="rejectEntry()" style="background:var(--danger);">ביטול - יציאה</button>`);
+};
+
+function confirmEntry() {
+    closeModal();
+    document.getElementById('mainContent').style.display = 'flex';
+    toast("ברוך הבא");
+}
+
+function rejectEntry() {
+    toast("חובה לאשר את התנאים כדי להשתמש במערכת", "#ef4444");
+    // אופציונלי: הפנייה לגוגל או פשוט להשאיר חסום
+    setTimeout(() => { window.location.href = "https://www.google.com"; }, 1500);
+}
 
 db.ref('codes').on('value', (s) => { 
     const val = s.val();
@@ -200,6 +225,13 @@ function toggleCode(el, code) {
 function addToCloud() {
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
+    
+    // בדיקת כפילות
+    const exists = data.find(item => item.address.trim().toLowerCase() === a.value.trim().toLowerCase());
+    if (exists) {
+        return toast("שגיאה: הכתובת כבר קיימת!", "#ef4444");
+    }
+
     db.ref('pending').push({ address: a.value, code: c.value });
     a.value = ""; c.value = ""; toast("נשלח לאישור ☁️", "#3b82f6");
 }
@@ -211,7 +243,6 @@ function approve(id, address, code) {
     toast("אושר וסונכרן!");
 }
 
-// פונקציות עריכה ומחיקה עם מודל
 function confirmDelete(id, name) {
     showModal(`<h3>מחיקה</h3><p>האם למחוק את <b>${name}</b>?</p>`, 
     `<button onclick="db.ref('codes/${id}').remove(); closeModal(); toast('נמחק');" style="background:var(--danger);">מחק לצמיתות</button>
@@ -254,7 +285,6 @@ function importToCloud(e) {
     reader.readAsText(file);
 }
 
-// Modal Logic
 function showModal(content, btns) {
     document.getElementById("modalContent").innerHTML = content;
     document.getElementById("modalBtns").innerHTML = btns;
@@ -270,7 +300,7 @@ function exportJSON() {
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n" + data.map(i => `${i.address},${i.code}`).join("\n");
     const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.href = "data:text5555#/csv;charset=utf-8," + encodeURIComponent(csv);
     a.download = "backup.csv"; a.click();
 }
 </script>
