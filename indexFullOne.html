@@ -3,92 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Manager Pro - 2026</title>
+<title>Code Manager Cloud Pro - 2026</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <style>
     :root {
-        --primary: #3b82f6;
-        --success: #22c55e;
-        --danger: #ef4444;
-        --warning: #facc15;
-        --glass-bg: rgba(15, 23, 42, 0.7);
-        --border: rgba(255, 255, 255, 0.08);
+        --primary: #3b82f6; --success: #22c55e; --danger: #ef4444; --warning: #facc15;
+        --glass-bg: rgba(15, 23, 42, 0.7); --border: rgba(255, 255, 255, 0.08);
     }
-
     body { 
-        font-family: 'Segoe UI', system-ui, sans-serif; 
-        color: white; 
-        margin: 0; 
-        min-height: 100vh; 
-        display: flex; 
-        flex-direction: column;
-        background-image: url('https://i.postimg.cc/90F762pz/background.png');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        background-repeat: no-repeat;
-    }
-
-    h1 { 
-        text-align: center; 
-        padding: 20px 0; 
-        background: rgba(15, 23, 42, 0.6); 
-        margin: 0; 
-        border-bottom: 1px solid var(--border); 
-        backdrop-filter: blur(12px); 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 15px;
+        font-family: 'Segoe UI', sans-serif; color: white; margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+        background-image: url('https://i.postimg.cc/90F762pz/background.png'); background-size: cover; background-position: center; background-attachment: fixed;
     }
     
+    #mainContent { display: none; flex-direction: column; min-height: 100vh; }
+    h1 { text-align: center; padding: 20px 0; background: rgba(15, 23, 42, 0.6); margin: 0; border-bottom: 1px solid var(--border); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 15px; }
     .header-logo { height: 40px; width: auto; }
-
     .container { max-width: 900px; margin: auto; padding: 20px; flex: 1; width: 100%; box-sizing: border-box; }
+    .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
+    input { padding: 14px; margin: 5px; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: calc(100% - 28px); box-sizing: border-box; outline: none; font-size: 15px; }
     
-    .glass { 
-        background: var(--glass-bg); 
-        backdrop-filter: blur(16px); 
-        border: 1px solid var(--border); 
-        border-radius: 16px; 
-        padding: 18px; 
-        margin-bottom: 15px; 
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-
-    input { padding: 14px; margin: 5px; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: calc(100% - 28px); box-sizing: border-box; outline: none; transition: 0.3s; font-size: 15px;}
-    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); background: rgba(30, 41, 59, 0.8); }
-
+    /* כפתורים - חזרה לעיצוב המקורי */
     button { padding: 14px; margin: 5px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    button:active { transform: scale(0.96); }
+    button:disabled { opacity: 0.2; cursor: not-allowed; }
+    button:active:not(:disabled) { transform: scale(0.96); }
     
     .btn-add { background: var(--success); width: 100%; margin-top: 12px; }
     .btn-primary { background: var(--primary); }
     .btn-ghost { background: rgba(100, 116, 139, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-    
-    /* כפתור יציאה שיופיע תמיד כשהאפליקציה פתוחה */
-    .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 18px; font-size: 13px; margin-bottom: 15px; color: #fca5a5; }
-    .btn-logout:hover { background: var(--danger); color: white; }
-    
-    .backup-zone { display: none; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
-    .btn-backup { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; min-width: 105px; }
-    
-    table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; margin-top: 10px; backdrop-filter: blur(16px); border: 1px solid var(--border); }
+    .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 18px; font-size: 13px; color: #fca5a5; }
+    .btn-backup { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; min-width: 100px; }
+
+    table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px 16px 0 0; overflow: hidden; margin-top: 10px; backdrop-filter: blur(16px); border: 1px solid var(--border); border-bottom: none; }
     td, th { padding: 16px; border-bottom: 1px solid var(--border); text-align: right; }
     th { background: rgba(51, 65, 85, 0.5); color: #94a3b8; font-size: 12px; }
-
-    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: 'Consolas', monospace; display: inline-block; transition: 0.2s; }
+    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; display: inline-block; }
     
+    /* Pagination Bar */
+    .pagination-bar { 
+        display: flex; justify-content: center; align-items: center; gap: 10px; 
+        background: rgba(15, 23, 42, 0.8); padding: 15px; 
+        border-radius: 0 0 16px 16px; border: 1px solid var(--border);
+        backdrop-filter: blur(16px); margin-bottom: 30px;
+    }
+    .page-indicator { 
+        background: var(--primary); padding: 6px 14px; border-radius: 20px; 
+        font-size: 12px; font-weight: 800; color: white; min-width: 90px; text-align: center;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-nav { background: rgba(255,255,255,0.05); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 10px; margin: 0; padding: 0; }
+
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); }
-    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 28px; text-align: center; border: 1px solid var(--border); overflow: hidden; animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes modalIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-body { padding: 35px 25px 25px; }
-    .modal-actions { display: flex; flex-direction: column; padding: 0 25px 25px; gap: 8px; }
-    .modal-actions button { margin: 0; padding: 16px; border-radius: 16px; }
-
-    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; pointer-events: none; backdrop-filter: blur(8px); }
-    
+    .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
+    .modal-body { padding: 30px 20px; text-align: center; }
+    .modal-actions { display: flex; flex-direction: column; padding: 0 20px 20px; gap: 8px; }
+    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; }
     footer { text-align: center; padding: 25px; font-size: 13px; color: #64748b; margin-top: auto; background: rgba(15, 23, 42, 0.6); border-top: 1px solid var(--border); }
     .admin-only { display: none; }
 </style>
@@ -96,64 +68,65 @@
 
 <body>
 
-<h1>
-    <img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo">
-    Code Manager
-</h1>
+<div id="mainContent">
+    <h1><img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo"> Code Manager Cloud</h1>
 
-<div class="container">
-    <div id="loginBox" class="glass" style="text-align:center;">
-        <h3 style="margin:0 0 15px 0;">כניסה למערכת</h3>
-        <input id="password" type="password" placeholder="סיסמת מנהל">
-        <button onclick="loginAdmin()" class="btn-primary" style="width:100%; margin-top:10px;">
-            <i class="fa-solid fa-user-shield"></i> כניסה כמנהל
-        </button>
-        <button onclick="loginGuest()" class="btn-ghost" style="width:100%; margin-top:10px;">
-            <i class="fa-solid fa-eye"></i> כניסה כאורח
-        </button>
+    <div class="container">
+        <div id="loginBox" class="glass" style="text-align:center;">
+            <h3 style="margin:0 0 15px 0;">כניסה למערכת ענן</h3>
+            <input id="password" type="password" placeholder="סיסמת מנהל">
+            <button onclick="loginAdmin()" class="btn-primary" style="width:100%; margin-top:10px;"><i class="fa-solid fa-user-shield"></i> כניסה כמנהל</button>
+            <button onclick="loginGuest()" class="btn-ghost" style="width:100%; margin-top:10px;"><i class="fa-solid fa-eye"></i> כניסה כאורח</button>
+        </div>
+
+        <div id="app" style="display:none;">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
+            </div>
+
+            <div id="backupZone" class="glass admin-only" style="display:none; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
+                <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> גיבוי</button>
+                <button onclick="document.getElementById('importFile').click()" class="btn-backup" style="border-color: var(--primary);"><i class="fa-solid fa-upload"></i> שחזור</button>
+                <input type="file" id="importFile" style="display:none" onchange="importToCloud(event)" accept=".json">
+            </div>
+
+            <div class="glass" style="display:flex; align-items:center;">
+                <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
+                <input id="searchInput" placeholder="חיפוש כתובת..." oninput="currentPage=1; render()" style="background:transparent; border:none; margin:0; width: 100%;">
+            </div>
+
+            <div id="stats" style="font-size: 11px; color: #64748b; margin-bottom: 5px; text-align: left;"></div>
+
+            <div class="glass">
+                <input id="address" placeholder="כתובת / תיאור">
+                <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
+                <button id="submitBtn" onclick="addToCloud()" class="btn-add"><i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן</button>
+            </div>
+
+            <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
+                <h4 style="margin:0 0 10px 0; color:var(--warning);">בקשות ממתינות:</h4>
+                <div id="pendingList"></div>
+            </div>
+
+            <table>
+                <thead><tr><th>כתובת</th><th>קוד</th><th class="admin-only">ניהול</th></tr></thead>
+                <tbody id="table"></tbody>
+            </table>
+
+            <div id="paginationBar" class="pagination-bar">
+                <button id="firstPage" class="btn-nav" title="עמוד ראשון" onclick="goToFirstPage()"><i class="fa-solid fa-angles-right"></i></button>
+                <button id="prevPage" class="btn-nav" title="הקודם" onclick="changePage(-1)"><i class="fa-solid fa-chevron-right"></i></button>
+                
+                <div id="pageIndicator" class="page-indicator">עמוד 1 מתוך 1</div>
+                
+                <button id="nextPage" class="btn-nav" title="הבא" onclick="changePage(1)"><i class="fa-solid fa-chevron-left"></i></button>
+            </div>
+        </div>
     </div>
 
-    <div id="app" style="display:none;">
-        
-        <div style="display: flex; justify-content: flex-end;">
-            <button onclick="logout()" class="btn-logout">
-                <i class="fa-solid fa-right-from-bracket"></i> יציאה
-            </button>
-        </div>
-
-        <div id="backupZone" class="backup-zone admin-only">
-            <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
-            <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> קובץ גיבוי</button>
-            <button onclick="document.getElementById('importFile').click()" class="btn-backup" style="border-color: var(--primary);"><i class="fa-solid fa-upload"></i> שחזור</button>
-            <input type="file" id="importFile" style="display:none" onchange="importJSON(event)" accept=".json">
-        </div>
-
-        <div class="glass" style="display:flex; align-items:center;">
-            <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
-            <input id="searchInput" placeholder="חיפוש כתובת..." oninput="render()" style="background:transparent; border:none; margin:0; width: 100%;">
-        </div>
-
-        <div class="glass">
-            <input id="address" placeholder="כתובת / תיאור">
-            <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
-            <button onclick="add()" class="btn-add">
-                <i class="fa-solid fa-paper-plane"></i> הוסף למערכת
-            </button>
-        </div>
-
-        <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
-            <h4 style="margin:0 0 10px 0; color:var(--warning);"><i class="fa-solid fa-clock"></i> ממתין לאישור:</h4>
-            <div id="pendingList"></div>
-        </div>
-
-        <table>
-            <thead><tr><th>כתובת</th><th>קוד</th><th id="adminHeader" class="admin-only">ניהול</th></tr></thead>
-            <tbody id="table"></tbody>
-        </table>
-    </div>
+    <footer>© כל הזכויות שמורות - אלכסנדר זבודיסקר 2026</footer>
 </div>
-
-<footer>© כל הזכויות שמורות - אלכסנדר זבודיסקר 2026</footer>
 
 <div id="modal">
     <div class="modal-box">
@@ -164,164 +137,155 @@
 <div id="toast"></div>
 
 <script>
-const ADMIN_PASS = "1234";
-let data = JSON.parse(localStorage.getItem("data")) || [];
-let pending = JSON.parse(localStorage.getItem("pending")) || [];
-let isAdmin = false;
+const firebaseConfig = {
+  apiKey: "AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",
+  authDomain: "code-manager-314c2.firebaseapp.com",
+  databaseURL: "https://code-manager-314c2-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "code-manager-314c2",
+  storageBucket: "code-manager-314c2.firebasestorage.app",
+  messagingSenderId: "673454437709",
+  appId: "1:673454437709:web:690e62bb83290a086b3304"
+};
 
-function toast(msg, color = "#22c55e") {
-    const t = document.getElementById("toast");
-    t.innerText = msg; t.style.background = color; t.style.opacity = "1";
-    setTimeout(() => { t.style.opacity = "0"; }, 2000);
-}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let data = [], pending = [], isAdmin = sessionStorage.getItem("isAdmin") === "true";
+let currentPage = 1;
+const itemsPerPage = 10;
+
+window.onload = function() {
+    if (isAdmin) showApp();
+    showModal(`<h3>הצהרת פרטיות</h3><p>אני מאשר שהשימוש במידע לצורכי העבודה בלבד.</p>`, 
+    `<button onclick="confirmEntry()" class="btn-primary" style="width:100%;">אישור - המשך</button>
+     <button onclick="rejectEntry()" style="background:var(--danger); width:100%;">ביטול - יציאה</button>`);
+};
+
+function confirmEntry() { closeModal(); document.getElementById('mainContent').style.display = 'flex'; }
+function rejectEntry() { window.location.href = "https://www.google.com"; }
+
+db.ref('codes').on('value', (s) => { data = s.val() ? Object.values(s.val()) : []; render(); });
+db.ref('pending').on('value', (s) => { pending = s.val() ? Object.entries(s.val()) : []; render(); });
 
 function loginAdmin() {
-    if (document.getElementById("password").value === ADMIN_PASS) {
-        isAdmin = true;
-        showApp();
-        toast("שלום מנהל!");
+    if (document.getElementById("password").value === "772555") { 
+        isAdmin = true; sessionStorage.setItem("isAdmin", "true");
+        showApp(); toast("שלום מנהל"); 
     } else { toast("סיסמה שגויה", "#ef4444"); }
 }
 
-function loginGuest() { 
-    isAdmin = false; 
-    showApp(); 
-    toast("כניסת אורח", "#3b82f6"); 
-}
+function loginGuest() { isAdmin = false; showApp(); toast("כניסת אורח"); }
 
 function logout() {
-    isAdmin = false;
+    isAdmin = false; sessionStorage.removeItem("isAdmin");
     document.getElementById("app").style.display = "none";
     document.getElementById("loginBox").style.display = "block";
-    document.getElementById("password").value = "";
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-    toast("יצאת מהמערכת", "#64748b");
 }
 
 function showApp() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
-    
-    if (isAdmin) {
-        document.querySelectorAll('.admin-only').forEach(el => {
-            if (el.id === 'backupZone') el.style.display = 'flex';
-            else el.style.display = 'block';
-        });
-    }
+    if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = (el.id === 'backupZone') ? 'flex' : 'block');
     render();
 }
 
 function render() {
-    const term = document.getElementById("searchInput").value.toLowerCase();
+    const term = (document.getElementById("searchInput")?.value || "").toLowerCase();
     const tableBody = document.getElementById("table");
-    const filtered = data.filter(d => d.address.toLowerCase().includes(term));
-    filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
     
-    tableBody.innerHTML = filtered.map((d, i) => {
-        const idx = data.indexOf(d);
-        return `<tr>
-            <td>${d.address}</td>
-            <td><span class="code" onclick="toggleCode(this, '${d.code}')">••••</span></td>
-            ${isAdmin ? `<td>
-                <button onclick="edit(${idx})" style="background:none; color:var(--primary); padding:5px;"><i class="fa-solid fa-pen"></i></button>
-                <button onclick="del(${idx})" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
-            </td>` : ''}
-        </tr>`;
-    }).join("");
+    let filtered = data.filter(d => (d.address || "").toLowerCase().includes(term));
+    filtered.sort((a, b) => (a.address || "").localeCompare(b.address || "", 'he'));
+    
+    const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    
+    const paginatedItems = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    
+    document.getElementById("stats").innerText = `סה"כ: ${filtered.length} פריטים`;
+    document.getElementById("pageIndicator").innerText = `עמוד ${currentPage} מתוך ${totalPages}`;
+    
+    document.getElementById("firstPage").disabled = (currentPage === 1);
+    document.getElementById("prevPage").disabled = (currentPage === 1);
+    document.getElementById("nextPage").disabled = (currentPage === totalPages);
+
+    if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="${isAdmin ? 3 : 2}" style="text-align:center; padding:40px; color:#64748b;">לא נמצאו נתונים</td></tr>`;
+        document.getElementById("paginationBar").style.display = "none";
+    } else {
+        document.getElementById("paginationBar").style.display = "flex";
+        tableBody.innerHTML = paginatedItems.map(d => `
+            <tr>
+                <td>${d.address || "ללא תיאור"}</td>
+                <td><span class="code" onclick="handleCodeClick(this, '${d.id}')">••••</span></td>
+                ${isAdmin ? `<td>
+                    <button onclick="editItem('${d.id}')" style="background:none; color:var(--primary); padding:5px;"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="confirmDelete('${d.id}', '${d.address}')" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
+                </td>` : ''}
+            </tr>`).join("");
+    }
 
     if (isAdmin && pending.length > 0) {
         document.getElementById("pendingSection").style.display = "block";
-        document.getElementById("pendingList").innerHTML = pending.map((p, i) => `
+        document.getElementById("pendingList").innerHTML = pending.map(([id, p]) => `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
-                <span>${p.address}</span>
+                <span style="font-size:14px;">${p.address} <b>(${p.code})</b></span>
                 <div style="display:flex; gap:5px;">
-                    <button onclick="approve(${i})" style="background:var(--success); padding:5px 10px; font-size:12px;">אשר</button>
-                    <button onclick="delPending(${i})" style="background:var(--danger); padding:5px 10px; font-size:12px;">מחק</button>
+                    <button onclick="approve('${id}', '${p.address}', '${p.code}')" style="background:var(--success); padding:5px 10px; font-size:12px;">אשר</button>
+                    <button onclick="db.ref('pending/'+'${id}').remove()" style="background:var(--danger); padding:5px 10px; font-size:12px;">מחק</button>
                 </div>
-            </div>
-        `).join("");
+            </div>`).join("");
     } else { document.getElementById("pendingSection").style.display = "none"; }
 }
 
-function toggleCode(el, code) {
-    if (el.innerText === "••••") {
-        el.innerText = code;
-        navigator.clipboard.writeText(code);
-        toast("הקוד הועתק!");
-    } else { el.innerText = "••••"; }
+function changePage(dir) { currentPage += dir; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function goToFirstPage() { currentPage = 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+async function handleCodeClick(el, id) {
+    const item = data.find(d => d.id === id);
+    if (!item || el.innerText !== "••••") { el.innerText = "••••"; return; }
+    el.innerText = item.code;
+    try {
+        if (navigator.clipboard) await navigator.clipboard.writeText(item.code);
+        else throw "err";
+    } catch (err) {
+        const t = document.createElement("textarea"); t.value = item.code; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+    }
+    toast("הועתק!");
+    setTimeout(() => { if(el.innerText !== "••••") el.innerText = "••••"; }, 4000);
 }
 
-function add() {
+function addToCloud() {
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
-    pending.push({ address: a.value, code: c.value });
-    saveAll(); render();
-    a.value = ""; c.value = "";
-    toast("נשלח לאישור 🚀", "#3b82f6");
+    if (data.find(i => (i.address||"").toLowerCase() === a.value.trim().toLowerCase())) return toast("כבר קיים!", "#ef4444");
+    db.ref('pending').push({ address: a.value, code: c.value }).then(() => {
+        a.value = ""; c.value = ""; toast("נשלח לאישור ☁️", "#3b82f6");
+    });
 }
 
-function approve(i) {
-    data.push(pending[i]);
-    pending.splice(i, 1);
-    saveAll(); render();
-    toast("אושר ✅");
+function approve(id, address, code) {
+    const newId = Date.now().toString();
+    db.ref('codes/' + newId).set({ id: newId, address, code });
+    db.ref('pending/' + id).remove();
 }
 
-function delPending(i) { pending.splice(i, 1); saveAll(); render(); toast("נמחק"); }
-
-function exportCSV() {
-    let csv = "\ufeffכתובת,קוד\n";
-    data.forEach(item => { csv += `${item.address},${item.code}\n`; });
-    downloadFile(csv, "codes.csv", "text/csv;charset=utf-8;");
+function confirmDelete(id, name) {
+    showModal(`<h3>מחיקה</h3><p>למחוק את <b>${name}</b>?</p>`, 
+    `<button onclick="db.ref('codes/${id}').remove(); closeModal();" style="background:var(--danger); width:100%;">מחק</button>
+     <button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`);
 }
 
-function exportJSON() {
-    downloadFile(JSON.stringify({ data, pending }), "backup.json", "application/json");
-}
-
-function importJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const imported = JSON.parse(e.target.result);
-            if (imported.data && confirm("לשחזר נתונים?")) {
-                data = imported.data;
-                pending = imported.pending || [];
-                saveAll(); render();
-                toast("שוחזר!");
-            }
-        } catch (err) { toast("קובץ לא תקין", "#ef4444"); }
-    };
-    reader.readAsText(file);
-}
-
-function downloadFile(content, fileName, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = fileName;
-    a.click();
-}
-
-function del(index) {
-    showModal(`<h3>מחיקה</h3><p>למחוק את <b>${data[index].address}</b>?</p>`, 
-    `<button onclick="confirmDelete(${index})" style="background:var(--danger);">מחק</button>
-     <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
-}
-
-function edit(index) {
-    const item = data[index];
+function editItem(id) {
+    const item = data.find(d => d.id === id);
     showModal(`<h3>עריכה</h3><input id="editA" value="${item.address}"><input id="editC" value="${item.code}">`, 
-    `<button onclick="confirmEdit(${index})" style="background:var(--success);">שמור</button>
-     <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
+    `<button onclick="saveEdit('${id}')" style="background:var(--success); width:100%;">שמור</button>
+     <button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`);
 }
 
-function confirmDelete(i) { data.splice(i, 1); saveAll(); closeModal(); render(); toast("נמחק"); }
-function confirmEdit(i) {
-    const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
-    if (nA && nC) { data[i] = { address: nA, code: nC }; saveAll(); closeModal(); render(); toast("עודכן"); }
+function saveEdit(id) {
+    db.ref('codes/' + id).update({ address: document.getElementById("editA").value, code: document.getElementById("editC").value });
+    closeModal();
 }
 
 function showModal(content, btns) {
@@ -330,9 +294,28 @@ function showModal(content, btns) {
     document.getElementById("modal").style.display = "block";
 }
 function closeModal() { document.getElementById("modal").style.display = "none"; }
-function saveAll() {
-    localStorage.setItem("data", JSON.stringify(data));
-    localStorage.setItem("pending", JSON.stringify(pending));
+function toast(msg, color="#22c55e") {
+    const t = document.getElementById("toast"); t.innerText = msg; t.style.background = color; t.style.opacity = "1";
+    setTimeout(() => t.style.opacity = "0", 2000);
+}
+
+function exportJSON() {
+    const a = document.createElement("a"); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+    a.download = "backup.json"; a.click();
+}
+function exportCSV() {
+    let csv = "\ufeffכתובת,קוד\n" + data.map(i => `${i.address},${i.code}`).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = "backup.csv"; a.click();
+}
+function importToCloud(e) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const imported = JSON.parse(ev.target.result);
+        imported.forEach(i => { const id = Date.now()+Math.random(); db.ref('codes/'+id).set({id, address:i.address, code:i.code}); });
+        toast("שוחזר!");
+    };
+    reader.readAsText(e.target.files[0]);
 }
 </script>
 </body>
