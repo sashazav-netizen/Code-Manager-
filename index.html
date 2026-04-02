@@ -19,7 +19,6 @@
         background-image: url('https://i.postimg.cc/90F762pz/background.png'); background-size: cover; background-position: center; background-attachment: fixed;
     }
     
-    /* Wrapper להסתרה עד אישור */
     #mainContent { display: none; flex-direction: column; min-height: 100vh; }
 
     h1 { text-align: center; padding: 20px 0; background: rgba(15, 23, 42, 0.6); margin: 0; border-bottom: 1px solid var(--border); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 15px; }
@@ -28,7 +27,8 @@
     .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
     input { padding: 14px; margin: 5px; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: calc(100% - 28px); box-sizing: border-box; outline: none; font-size: 15px; }
     button { padding: 14px; margin: 5px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    button:active { transform: scale(0.96); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    button:active:not(:disabled) { transform: scale(0.96); }
     .btn-add { background: var(--success); width: 100%; margin-top: 12px; }
     .btn-primary { background: var(--primary); }
     .btn-ghost { background: rgba(100, 116, 139, 0.3); border: 1px solid rgba(255,255,255,0.1); }
@@ -38,9 +38,9 @@
     table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; margin-top: 10px; backdrop-filter: blur(16px); border: 1px solid var(--border); }
     td, th { padding: 16px; border-bottom: 1px solid var(--border); text-align: right; }
     th { background: rgba(51, 65, 85, 0.5); color: #94a3b8; font-size: 12px; }
-    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; display: inline-block; }
+    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; display: inline-block; transition: 0.2s; }
+    .code:hover { background: rgba(51, 65, 85, 0.9); }
     
-    /* Modal */
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); }
     .modal-box { background: #1e293b; margin: 15vh auto; max-width: 340px; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
     .modal-body { padding: 30px 20px; text-align: center; }
@@ -88,7 +88,7 @@
             <div class="glass">
                 <input id="address" placeholder="כתובת / תיאור">
                 <input id="code" placeholder="הכנס קוד" style="margin-top:10px;">
-                <button onclick="addToCloud()" class="btn-add"><i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן</button>
+                <button id="submitBtn" onclick="addToCloud()" class="btn-add"><i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן</button>
             </div>
 
             <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
@@ -115,6 +115,7 @@
 <div id="toast"></div>
 
 <script>
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",
   authDomain: "code-manager-314c2.firebaseapp.com",
@@ -127,9 +128,11 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-let data = [], pending = [], isAdmin = false;
+let data = [], pending = [], isAdmin = sessionStorage.getItem("isAdmin") === "true";
 
+// 2. בדיקת חיבור בטעינה
 window.onload = function() {
+    if (isAdmin) showApp();
     showModal(`<h3>הצהרת פרטיות</h3><p>אני מאשר שהשימוש במידע לצורכי העבודה בלבד.</p>`, 
     `<button onclick="confirmEntry()" style="background:var(--success);">אישור - המשך</button>
      <button onclick="rejectEntry()" style="background:var(--danger);">ביטול - יציאה</button>`);
@@ -146,6 +149,7 @@ function rejectEntry() {
     setTimeout(() => { window.location.href = "https://www.google.com"; }, 1500);
 }
 
+// Listeners
 db.ref('codes').on('value', (s) => { 
     const val = s.val();
     data = val ? Object.values(val) : []; 
@@ -164,15 +168,21 @@ function toast(msg, color = "#22c55e") {
     setTimeout(() => { t.style.opacity = "0"; }, 2000);
 }
 
+// 2. התחברות עם Session
 function loginAdmin() {
-    if (document.getElementById("password").value === "1234") { isAdmin = true; showApp(); toast("שלום מנהל"); }
-    else { toast("סיסמה שגויה", "#ef4444"); }
+    if (document.getElementById("password").value === "1234") { 
+        isAdmin = true; 
+        sessionStorage.setItem("isAdmin", "true");
+        showApp(); 
+        toast("שלום מנהל"); 
+    } else { toast("סיסמה שגויה", "#ef4444"); }
 }
 
 function loginGuest() { isAdmin = false; showApp(); toast("כניסת אורח"); }
 
 function logout() {
     isAdmin = false;
+    sessionStorage.removeItem("isAdmin");
     document.getElementById("app").style.display = "none";
     document.getElementById("loginBox").style.display = "block";
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
@@ -185,15 +195,25 @@ function showApp() {
     render();
 }
 
+// 4+6. רינדור בטוח עם טיפול בטבלה ריקה ושגיאות חיפוש
 function render() {
-    const term = document.getElementById("searchInput").value.toLowerCase();
-    const filtered = data.filter(d => d.address.toLowerCase().includes(term));
-    filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
-    document.getElementById("stats").innerText = "סה\"כ: " + filtered.length + " פריטים";
-    document.getElementById("table").innerHTML = filtered.map(d => `
+    const term = (document.getElementById("searchInput")?.value || "").toLowerCase();
+    const tableBody = document.getElementById("table");
+    
+    const filtered = data.filter(d => (d.address || "").toLowerCase().includes(term));
+    filtered.sort((a, b) => (a.address || "").localeCompare(b.address || "", 'he'));
+    
+    document.getElementById("stats").innerText = `סה"כ: ${filtered.length} פריטים`;
+    
+    if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="${isAdmin ? 3 : 2}" style="text-align:center; padding:40px; color:#64748b;">לא נמצאו נתונים להצגה</td></tr>`;
+        return;
+    }
+
+    tableBody.innerHTML = filtered.map(d => `
         <tr>
-            <td>${d.address}</td>
-            <td><span class="code" onclick="toggleCode(this, '${d.code}')">••••</span></td>
+            <td>${d.address || "ללא תיאור"}</td>
+            <td><span class="code" onclick="handleCodeClick(this, '${d.id}')">••••</span></td>
             ${isAdmin ? `<td>
                 <button onclick="editItem('${d.id}')" style="background:none; color:var(--primary); padding:5px;"><i class="fa-solid fa-pen"></i></button>
                 <button onclick="confirmDelete('${d.id}', '${d.address}')" style="background:none; color:var(--danger); padding:5px;"><i class="fa-solid fa-trash"></i></button>
@@ -213,25 +233,60 @@ function render() {
     } else { document.getElementById("pendingSection").style.display = "none"; }
 }
 
-function toggleCode(el, code) {
-    if (el.innerText === "••••") { el.innerText = code; navigator.clipboard.writeText(code); toast("הועתק!"); }
-    else { el.innerText = "••••"; }
+// 1+5. שליפת קוד בזמן לחיצה והעתקה בטוחה
+async function handleCodeClick(el, id) {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+
+    if (el.innerText === "••••") {
+        const originalCode = item.code;
+        el.innerText = originalCode;
+        
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(originalCode);
+            } else { throw "API Error"; }
+        } catch (err) {
+            const textArea = document.createElement("textarea");
+            textArea.value = originalCode;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+        
+        toast("הועתק ללוח!");
+        setTimeout(() => { if(el) el.innerText = "••••"; }, 4000);
+    } else {
+        el.innerText = "••••";
+    }
 }
 
+// 3. מניעת לחיצה כפולה ובדיקת כפילות
 function addToCloud() {
+    const btn = document.getElementById("submitBtn");
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
     
     const newAddress = a.value.trim().toLowerCase();
-    const existsInData = data.find(item => item.address.trim().toLowerCase() === newAddress);
-    const existsInPending = pending.find(([id, p]) => p.address.trim().toLowerCase() === newAddress);
+    const existsInData = data.find(item => (item.address || "").trim().toLowerCase() === newAddress);
+    const existsInPending = pending.find(([id, p]) => (p.address || "").trim().toLowerCase() === newAddress);
 
-    if (existsInData || existsInPending) {
-        return toast("שגיאה: הכתובת כבר קיימת או ממתינה!", "#ef4444");
-    }
+    if (existsInData || existsInPending) return toast("שגיאה: הכתובת כבר קיימת!", "#ef4444");
 
-    db.ref('pending').push({ address: a.value, code: c.value });
-    a.value = ""; c.value = ""; toast("נשלח לאישור ☁️", "#3b82f6");
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> שולח...`;
+
+    db.ref('pending').push({ address: a.value, code: c.value })
+    .then(() => {
+        a.value = ""; c.value = ""; 
+        toast("נשלח לאישור ☁️", "#3b82f6");
+    })
+    .catch(() => toast("שגיאת תקשורת", "#ef4444"))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן`;
+    });
 }
 
 function approve(id, address, code) {
@@ -287,7 +342,6 @@ function exportJSON() {
     a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
     a.download = "backup.json"; a.click();
 }
-
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n" + data.map(i => `${i.address},${i.code}`).join("\n");
     const a = document.createElement("a");
