@@ -129,7 +129,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let data = [], pending = [], isAdmin = false;
 
-// הפעלת חלון אישור מיד עם טעינת הדף
 window.onload = function() {
     showModal(`<h3>הצהרת פרטיות</h3><p>אני מאשר שהשימוש במידע לצורכי העבודה בלבד.</p>`, 
     `<button onclick="confirmEntry()" style="background:var(--success);">אישור - המשך</button>
@@ -144,7 +143,6 @@ function confirmEntry() {
 
 function rejectEntry() {
     toast("חובה לאשר את התנאים כדי להשתמש במערכת", "#ef4444");
-    // אופציונלי: הפנייה לגוגל או פשוט להשאיר חסום
     setTimeout(() => { window.location.href = "https://www.google.com"; }, 1500);
 }
 
@@ -191,9 +189,7 @@ function render() {
     const term = document.getElementById("searchInput").value.toLowerCase();
     const filtered = data.filter(d => d.address.toLowerCase().includes(term));
     filtered.sort((a, b) => a.address.localeCompare(b.address, 'he'));
-    
     document.getElementById("stats").innerText = "סה\"כ: " + filtered.length + " פריטים";
-    
     document.getElementById("table").innerHTML = filtered.map(d => `
         <tr>
             <td>${d.address}</td>
@@ -226,10 +222,12 @@ function addToCloud() {
     const a = document.getElementById("address"), c = document.getElementById("code");
     if (!a.value || !c.value) return toast("מלא הכל", "#ef4444");
     
-    // בדיקת כפילות
-    const exists = data.find(item => item.address.trim().toLowerCase() === a.value.trim().toLowerCase());
-    if (exists) {
-        return toast("שגיאה: הכתובת כבר קיימת!", "#ef4444");
+    const newAddress = a.value.trim().toLowerCase();
+    const existsInData = data.find(item => item.address.trim().toLowerCase() === newAddress);
+    const existsInPending = pending.find(([id, p]) => p.address.trim().toLowerCase() === newAddress);
+
+    if (existsInData || existsInPending) {
+        return toast("שגיאה: הכתובת כבר קיימת או ממתינה!", "#ef4444");
     }
 
     db.ref('pending').push({ address: a.value, code: c.value });
@@ -251,19 +249,14 @@ function confirmDelete(id, name) {
 
 function editItem(id) {
     const item = data.find(d => d.id === id);
-    showModal(`<h3>עריכה</h3>
-        <input id="editA" value="${item.address}" style="margin-bottom:10px;">
-        <input id="editC" value="${item.code}">`, 
+    showModal(`<h3>עריכה</h3><input id="editA" value="${item.address}" style="margin-bottom:10px;"><input id="editC" value="${item.code}">`, 
     `<button onclick="saveEdit('${id}')" style="background:var(--success);">שמור שינויים</button>
      <button onclick="closeModal()" style="background:transparent; color:#94a3b8;">ביטול</button>`);
 }
 
 function saveEdit(id) {
     const nA = document.getElementById("editA").value, nC = document.getElementById("editC").value;
-    if (nA && nC) {
-        db.ref('codes/' + id).update({ address: nA, code: nC });
-        closeModal(); toast("עודכן בהצלחה");
-    }
+    if (nA && nC) { db.ref('codes/' + id).update({ address: nA, code: nC }); closeModal(); toast("עודכן בהצלחה"); }
 }
 
 function importToCloud(e) {
@@ -273,11 +266,8 @@ function importToCloud(e) {
     reader.onload = (ev) => {
         try {
             const imported = JSON.parse(ev.target.result);
-            if (confirm("לשחזר " + imported.length + " פריטים לענן?")) {
-                imported.forEach(item => {
-                    const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-                    db.ref('codes/' + id).set({ id, address: item.address, code: item.code });
-                });
+            if (confirm("לשחזר " + imported.length + " פריטים?")) {
+                imported.forEach(item => { const id = Date.now().toString() + Math.random().toString(36).substr(2, 5); db.ref('codes/' + id).set({ id, address: item.address, code: item.code }); });
                 toast("שוחזר בהצלחה");
             }
         } catch(err) { toast("קובץ לא תקין", "#ef4444"); }
@@ -297,10 +287,11 @@ function exportJSON() {
     a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
     a.download = "backup.json"; a.click();
 }
+
 function exportCSV() {
     let csv = "\ufeffכתובת,קוד\n" + data.map(i => `${i.address},${i.code}`).join("\n");
     const a = document.createElement("a");
-    a.href = "data:text5555#/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
     a.download = "backup.csv"; a.click();
 }
 </script>
