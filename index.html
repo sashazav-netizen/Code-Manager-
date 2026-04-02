@@ -130,7 +130,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let data = [], pending = [], isAdmin = sessionStorage.getItem("isAdmin") === "true";
 
-// 2. בדיקת חיבור בטעינה
 window.onload = function() {
     if (isAdmin) showApp();
     showModal(`<h3>הצהרת פרטיות</h3><p>אני מאשר שהשימוש במידע לצורכי העבודה בלבד.</p>`, 
@@ -149,7 +148,6 @@ function rejectEntry() {
     setTimeout(() => { window.location.href = "https://www.google.com"; }, 1500);
 }
 
-// Listeners
 db.ref('codes').on('value', (s) => { 
     const val = s.val();
     data = val ? Object.values(val) : []; 
@@ -168,9 +166,9 @@ function toast(msg, color = "#22c55e") {
     setTimeout(() => { t.style.opacity = "0"; }, 2000);
 }
 
-// 2. התחברות עם Session
+// התחברות עם סיסמה מעודכנת: 772555
 function loginAdmin() {
-    if (document.getElementById("password").value === "1234") { 
+    if (document.getElementById("password").value === "772555") { 
         isAdmin = true; 
         sessionStorage.setItem("isAdmin", "true");
         showApp(); 
@@ -195,7 +193,6 @@ function showApp() {
     render();
 }
 
-// 4+6. רינדור בטוח עם טיפול בטבלה ריקה ושגיאות חיפוש
 function render() {
     const term = (document.getElementById("searchInput")?.value || "").toLowerCase();
     const tableBody = document.getElementById("table");
@@ -233,7 +230,6 @@ function render() {
     } else { document.getElementById("pendingSection").style.display = "none"; }
 }
 
-// 1+5. שליפת קוד בזמן לחיצה והעתקה בטוחה
 async function handleCodeClick(el, id) {
     const item = data.find(d => d.id === id);
     if (!item) return;
@@ -262,7 +258,6 @@ async function handleCodeClick(el, id) {
     }
 }
 
-// 3. מניעת לחיצה כפולה ובדיקת כפילות
 function addToCloud() {
     const btn = document.getElementById("submitBtn");
     const a = document.getElementById("address"), c = document.getElementById("code");
