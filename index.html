@@ -37,6 +37,19 @@
     .btn-add     { background: var(--success); width: 100%; margin-top: 12px; }
     .btn-primary { background: var(--primary); width: 100%; }
     .btn-ghost   { background: rgba(100,116,139,0.3); border: 1px solid rgba(255,255,255,0.1); width: 100%; }
+    
+    /* כפתור מעבר קטן ומעוצב */
+    .btn-nav-link { 
+        background: linear-gradient(135deg, #6366f1, #3b82f6); 
+        width: auto; 
+        min-width: 180px;
+        max-width: 220px;
+        padding: 10px 20px;
+        font-size: 14px;
+        margin: 0 auto;
+        box-shadow: 0 4px 15px rgba(59,130,246,0.2); 
+    }
+
     .btn-logout  { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.3); padding: 8px 18px; font-size: 13px; color: #fca5a5; margin: 0; }
     .btn-backup  { background: rgba(30,41,59,0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; min-width: 90px; }
 
@@ -44,10 +57,10 @@
     table { width: 100%; border-collapse: collapse; background: var(--glass-bg); backdrop-filter: blur(16px); table-layout: fixed; }
     td, th { padding: 16px 12px; border-bottom: 1px solid var(--border); text-align: right; word-break: break-word; vertical-align: middle; }
     th { background: rgba(51,65,85,0.5); color: #94a3b8; font-size: 12px; }
-
-    th:nth-child(1), td:nth-child(1) { width: 50%; }
-    th:nth-child(2), td:nth-child(2) { width: 30%; text-align: center; }
-    th:nth-child(3), td:nth-child(3) { width: 20%; text-align: center; }
+    
+    th:nth-child(1), td:nth-child(1) { width: 50%; } 
+    th:nth-child(2), td:nth-child(2) { width: 30%; text-align: center; } 
+    th:nth-child(3), td:nth-child(3) { width: 20%; text-align: center; } 
 
     .code { background: rgba(51,65,85,0.6); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-family: monospace; display: inline-block; transition: 0.2s; letter-spacing: 1px; font-size: 14px; }
     .code:hover { background: rgba(51,65,85,0.95); transform: scale(1.04); }
@@ -61,16 +74,13 @@
     .page-indicator {
         background: var(--primary); padding: 6px 14px; border-radius: 20px;
         font-size: 12px; font-weight: 800; color: white; min-width: 100px; text-align: center;
-        box-shadow: 0 0 15px rgba(59,130,246,0.2);
     }
     .btn-nav { background: rgba(255,255,255,0.05); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 10px; margin: 0; padding: 0; }
 
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2,6,23,0.85); z-index: 1000; backdrop-filter: blur(10px); }
     .modal-box { background: #1e293b; margin: 15vh auto; width: 90%; max-width: 340px; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
     .modal-body { padding: 30px 20px; text-align: center; }
-    .modal-body input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
     .modal-actions { display: flex; flex-direction: column; padding: 0 20px 20px; gap: 8px; }
-    .modal-actions button { width: 100%; margin: 0; }
 
     #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; backdrop-filter: blur(8px); white-space: nowrap; }
 
@@ -95,8 +105,14 @@
         </div>
 
         <div id="app" style="display:none;">
+            <div style="display:flex; justify-content:center; margin-bottom:15px;">
+                <button onclick="window.location.href='index2.html'" class="btn-nav-link">
+                    <i class="fa-solid fa-users"></i> מעבר לרשימת אנשים
+                </button>
+            </div>
+
             <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-                <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> יציאה מהמערכת</button>
+                <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
             </div>
 
             <div id="backupZone" class="glass admin-only" style="display:none; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -115,7 +131,7 @@
 
             <div class="glass">
                 <input id="address" placeholder="כתובת / תיאור המקום">
-                <input id="code" placeholder="הכנס קוד גישה" style="margin-top:10px;" onkeydown="if(event.key==='Enter') addToCloud()">
+                <input id="code"    placeholder="הכנס קוד גישה" style="margin-top:10px;" onkeydown="if(event.key==='Enter') addToCloud()">
                 <button id="submitBtn" onclick="addToCloud()" class="btn-add">
                     <i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור
                 </button>
@@ -194,7 +210,6 @@ window.onload = function () {
 function confirmEntry() {
     closeModal();
     document.getElementById('mainContent').style.display = 'flex';
-    toast("ברוך הבא 👋");
 }
 function rejectEntry() {
     window.location.href = "https://www.google.com";
@@ -305,23 +320,17 @@ async function handleCodeClick(el, id) {
 
 function addToCloud() {
     const btn  = document.getElementById("submitBtn");
-    const aEl  = document.getElementById("address"), cEl = document.getElementById("code");
+    const aEl  = document.getElementById("address"), cEl  = document.getElementById("code");
     const addr = aEl.value.trim(), code = cEl.value.trim();
 
     if (!addr || !code) return toast("מלא כתובת וקוד", "#ef4444");
-
-    const norm = addr.toLowerCase();
-    if (data.find(i => (i.address || "").toLowerCase() === norm))
-        return toast("כתובת כבר קיימת!", "#ef4444");
-    if (pending.find(([,p]) => (p.address || "").toLowerCase() === norm))
-        return toast("כבר ממתין לאישור!", "#facc15");
+    if (data.find(i => (i.address || "").toLowerCase() === addr.toLowerCase())) return toast("כתובת כבר קיימת!", "#ef4444");
 
     btn.disabled = true;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> שולח...`;
 
     db.ref('pending').push({ address: addr, code })
         .then(() => { aEl.value = ""; cEl.value = ""; toast("נשלח לאישור ☁️", "#3b82f6"); })
-        .catch(() => toast("שגיאת תקשורת", "#ef4444"))
         .finally(() => { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור`; });
 }
 
@@ -334,8 +343,8 @@ function approve(id, address, code) {
 
 function confirmDelete(id, name) {
     showModal(`<h3>מחיקת פריט</h3><p>האם אתה בטוח שברצונך למחוק את <b>${name}</b>?</p>`,
-        `<button onclick="db.ref('codes/${id}').remove(); closeModal(); toast('נמחק בהצלחה 🗑️');" style="background:var(--danger);">מחק לצמיתות</button>
-         <button onclick="closeModal()" style="background:transparent;">ביטול וחזרה</button>`);
+        `<button onclick="db.ref('codes/${id}').remove(); closeModal(); toast('נמחק בהצלחה 🗑️');" style="background:var(--danger); width:100%;">מחק לצמיתות</button>
+         <button onclick="closeModal()" style="background:transparent; width:100%;">ביטול וחזרה</button>`);
 }
 
 function editItem(id) {
@@ -344,8 +353,8 @@ function editItem(id) {
     showModal(`<h3>עריכת נתונים</h3>
          <input id="editA" value="${item.address}" placeholder="כתובת" style="margin-bottom:8px;">
          <input id="editC" value="${item.code}"    placeholder="קוד">`,
-        `<button onclick="saveEdit('${id}')" style="background:var(--success);">שמור שינויים</button>
-         <button onclick="closeModal()" style="background:transparent;">ביטול</button>`);
+        `<button onclick="saveEdit('${id}')" style="background:var(--success); width:100%;">שמור שינויים</button>
+         <button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`);
 }
 
 function saveEdit(id) {
@@ -381,7 +390,6 @@ function importToCloud(e) {
         } catch { toast("קובץ לא תקין", "#ef4444"); }
     };
     reader.readAsText(file);
-    e.target.value = "";
 }
 
 function showModal(content, btns) {
