@@ -26,6 +26,18 @@
     .container { max-width: 1100px; margin: auto; padding: 15px; flex: 1; width: 100%; box-sizing: border-box; }
     .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
     
+    /* כפתור חזרה לדף הראשי */
+    .btn-nav-back { 
+        background: linear-gradient(135deg, #10b981, #059669); 
+        width: auto; 
+        min-width: 180px;
+        max-width: 220px;
+        padding: 10px 20px;
+        font-size: 14px;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); 
+    }
+
     input, textarea { padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: 100%; box-sizing: border-box; outline: none; font-size: 15px; transition: border-color 0.2s; }
     input:focus, textarea:focus { border-color: var(--primary); }
     textarea { resize: vertical; min-height: 50px; }
@@ -41,7 +53,6 @@
     .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 18px; font-size: 13px; color: #fca5a5; margin: 0; }
     .btn-backup { background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); font-size: 11px; padding: 10px 15px; flex: 1; min-width: 90px; }
 
-    /* טבלה */
     .table-wrapper { overflow-x: auto; border-radius: 16px 16px 0 0; border: 1px solid var(--border); border-bottom: none; }
     table { width: 100%; border-collapse: collapse; background: var(--glass-bg); min-width: 750px; }
     td, th { padding: 13px 10px; border-bottom: 1px solid var(--border); text-align: right; font-size: 14px; }
@@ -53,7 +64,6 @@
     .form-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0; }
     .form-row > * { flex: 1; min-width: 120px; margin: 0; }
 
-    /* מודל משופר */
     #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); overflow-y: auto; }
     .modal-box { background: #1e293b; margin: 5vh auto; width: 92%; max-width: 420px; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
     .modal-body { padding: 20px; text-align: center; overflow-y: auto; flex: 1; }
@@ -83,6 +93,12 @@
         </div>
 
         <div id="app" style="display:none;">
+            <div style="display:flex; justify-content:center;">
+                <button onclick="window.location.href='index.html'" class="btn-nav-back">
+                    <i class="fa-solid fa-house-lock"></i> מעבר לקודים של בתים
+                </button>
+            </div>
+
             <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
                 <button onclick="logout()" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
             </div>
