@@ -26,25 +26,19 @@
     .container { max-width: 1100px; margin: auto; padding: 15px; flex: 1; width: 100%; box-sizing: border-box; }
     .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
     
-    /* כפתור חזרה לדף הראשי */
     .btn-nav-back { 
         background: linear-gradient(135deg, #10b981, #059669); 
-        width: auto; 
-        min-width: 180px;
-        max-width: 220px;
-        padding: 10px 20px;
-        font-size: 14px;
-        margin: 0 auto 15px auto;
+        width: auto; min-width: 180px; max-width: 220px; padding: 10px 20px; font-size: 14px; margin: 0 auto 15px auto;
         box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); 
+        border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: white; font-weight: bold;
     }
 
     input, textarea { padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: 100%; box-sizing: border-box; outline: none; font-size: 15px; transition: border-color 0.2s; }
     input:focus, textarea:focus { border-color: var(--primary); }
     textarea { resize: vertical; min-height: 50px; }
-    input::placeholder, textarea::placeholder { color: #64748b; }
 
     button { padding: 14px; margin: 5px 0; border-radius: 10px; border: none; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
     button:active:not(:disabled) { transform: scale(0.96); }
     
     .btn-add { background: var(--success); width: 100%; margin-top: 12px; }
@@ -74,8 +68,8 @@
     .admin-only { display: none; }
 
     .pagination-bar { display: flex; justify-content: center; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.8); padding: 15px; border-radius: 0 0 16px 16px; border: 1px solid var(--border); backdrop-filter: blur(16px); margin-bottom: 30px; }
-    .page-indicator { background: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; color: white; min-width: 100px; text-align: center; }
-    .btn-nav { background: rgba(255,255,255,0.05); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 10px; margin: 0; padding: 0; }
+    .page-indicator { background: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; color: white; min-width: 110px; text-align: center; }
+    .btn-nav { background: rgba(255,255,255,0.05); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0; }
 </style>
 </head>
 
@@ -156,10 +150,11 @@
             </div>
 
             <div id="paginationBar" class="pagination-bar">
-                <button id="firstPage" class="btn-nav" onclick="goToFirstPage()"><i class="fa-solid fa-angles-right"></i></button>
-                <button id="prevPage" class="btn-nav" onclick="changePage(-1)"><i class="fa-solid fa-chevron-right"></i></button>
+                <button id="firstPage" title="עמוד ראשון" class="btn-nav" onclick="goToFirstPage()"><i class="fa-solid fa-angles-right"></i></button>
+                <button id="prevPage" title="הקודם" class="btn-nav" onclick="changePage(-1)"><i class="fa-solid fa-chevron-right"></i></button>
                 <div id="pageIndicator" class="page-indicator">עמוד 1 מתוך 1</div>
-                <button id="nextPage" class="btn-nav" onclick="changePage(1)"><i class="fa-solid fa-chevron-left"></i></button>
+                <button id="nextPage" title="הבא" class="btn-nav" onclick="changePage(1)"><i class="fa-solid fa-chevron-left"></i></button>
+                <button id="lastPage" title="עמוד אחרון" class="btn-nav" onclick="goToLastPage()"><i class="fa-solid fa-angles-left"></i></button>
             </div>
         </div>
     </div>
@@ -190,7 +185,9 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let data = [], pending = [], isAdmin = sessionStorage.getItem("isAdmin") === "true";
-let currentPage = 1, itemsPerPage = 10, toastTimer;
+let currentPage = 1, itemsPerPage = 10, toastTimer, totalPagesCount = 1;
+
+const ADMIN_HASH = "e1045583d773c03b76cab17c591d36b1d932e8b74bd0e83190dacd597826ba19";
 
 async function hashPass(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -200,7 +197,7 @@ async function hashPass(str) {
 window.onload = function() {
     if (isAdmin) showApp();
     showModal(
-        `<h3>הצהרת פרטיות</h3><p>השימוש במידע לצורכי עבודה בלבד.</p>`, 
+        `<h3>הצהרת פרטיות</h3><p>השימוש במידע לצורכי עבודה בלבד.</p>`,
         `<button onclick="confirmEntry()" style="background:var(--success); width:100%;">אישור - כניסה</button>
          <button onclick="rejectEntry()" style="background:var(--danger); width:100%;">ביטול</button>`
     );
@@ -214,11 +211,11 @@ db.ref('pending').on('value', s => { pending = s.val() ? Object.entries(s.val())
 
 async function loginAdmin() {
     const input = document.getElementById("password").value;
-    const h = "f9602521e67f0f4a56a6409893a79d06637492c68f6d639739e44040a4542f7c";
+    if (!input) return toast("הכנס סיסמה", "#ef4444");
     const inputHash = await hashPass(input);
-    if (input === "772555" || inputHash === h) { 
+    if (inputHash === ADMIN_HASH) {
         isAdmin = true; sessionStorage.setItem("isAdmin", "true");
-        showApp(); toast("מנהל מחובר 👑"); 
+        showApp(); toast("מנהל מחובר 👑");
     } else { toast("סיסמה שגויה", "#ef4444"); }
 }
 
@@ -234,30 +231,45 @@ function logout() {
 function showApp() {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
-    if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = (el.id === 'backupZone') ? 'flex' : (el.tagName === 'TH' || el.tagName === 'TD') ? 'table-cell' : 'block';
-    });
+    if (isAdmin) {
+        document.querySelectorAll('.admin-only').forEach(el => {
+            if (el.id === 'backupZone') el.style.display = 'flex';
+            else if (el.tagName === 'TH' || el.tagName === 'TD') el.style.display = 'table-cell';
+            else el.style.display = 'block';
+        });
+    }
     render();
 }
 
 function render() {
     const term = (document.getElementById("searchInput")?.value || "").toLowerCase();
     const tableBody = document.getElementById("table");
-    let filtered = data.filter(d => 
-        (d.firstname || "").toLowerCase().includes(term) || (d.lastname || "").toLowerCase().includes(term) ||
-        (d.address || "").toLowerCase().includes(term) || (d.city || "").toLowerCase().includes(term)
+    
+    let filtered = data.filter(d =>
+        (d.firstname || "").toLowerCase().includes(term) ||
+        (d.lastname || "").toLowerCase().includes(term) ||
+        (d.address || "").toLowerCase().includes(term) ||
+        (d.city || "").toLowerCase().includes(term)
     );
-    filtered.sort((a, b) => (a.lastname || "").localeCompare(b.lastname || "", 'he'));
 
-    const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-    if (currentPage > totalPages) currentPage = totalPages;
+    filtered.sort((a, b) => {
+        const first = (a.firstname || "").localeCompare(b.firstname || "", 'he');
+        if (first !== 0) return first;
+        return (a.lastname || "").localeCompare(b.lastname || "", 'he');
+    });
+
+    totalPagesCount = Math.ceil(filtered.length / itemsPerPage) || 1;
+    if (currentPage > totalPagesCount) currentPage = totalPagesCount;
     const pageItems = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     document.getElementById("stats").innerText = `רשומות: ${filtered.length}`;
-    document.getElementById("pageIndicator").innerText = `עמוד ${currentPage} מתוך ${totalPages}`;
+    document.getElementById("pageIndicator").innerText = `עמוד ${currentPage} מתוך ${totalPagesCount}`;
+    
+    // ניהול מצב הכפתורים
     document.getElementById("firstPage").disabled = (currentPage === 1);
     document.getElementById("prevPage").disabled = (currentPage === 1);
-    document.getElementById("nextPage").disabled = (currentPage === totalPages);
+    document.getElementById("nextPage").disabled = (currentPage === totalPagesCount);
+    document.getElementById("lastPage").disabled = (currentPage === totalPagesCount);
 
     if (filtered.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center; padding:40px; color:#64748b;">אין נתונים</td></tr>`;
@@ -271,7 +283,7 @@ function render() {
                 <td style="text-align:center;"><span class="code" onclick="handleIdClick(this, '${d.id}')">••••••</span></td>
                 <td>${d.address || "—"}</td>
                 <td>${d.city || "—"}</td>
-                <td class="td-notes" title="${(d.notes||'')}">${d.notes || '—'}</td>
+                <td title="${(d.notes || '')}">${d.notes || '—'}</td>
                 ${isAdmin ? `<td style="text-align:center;">
                     <i class="fa-solid fa-pen" onclick="editItem('${d.id}')" style="color:var(--primary); cursor:pointer; margin-left:10px;"></i>
                     <i class="fa-solid fa-trash" onclick="confirmDelete('${d.id}', '${d.firstname} ${d.lastname}')" style="color:var(--danger); cursor:pointer;"></i>
@@ -286,7 +298,7 @@ function render() {
                 <span style="font-size:12px;">${p.firstname} ${p.lastname} | ${p.city}</span>
                 <div style="display:flex; gap:5px;">
                     <button onclick="approvePending('${id}')" style="background:var(--success); padding:4px 8px; font-size:11px;">אשר</button>
-                    <button onclick="db.ref('pending/${id}').remove()" style="background:var(--danger); padding:4px 8px; font-size:11px;">מחק</button>
+                    <button onclick="rejectPending('${id}')" style="background:var(--danger); padding:4px 8px; font-size:11px;">מחק</button>
                 </div>
             </div>`).join("");
     } else { document.getElementById("pendingSection").style.display = "none"; }
@@ -294,113 +306,79 @@ function render() {
 
 function changePage(dir) { currentPage += dir; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function goToFirstPage() { currentPage = 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function goToLastPage() { currentPage = totalPagesCount; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 async function handleIdClick(el, id) {
     const item = data.find(d => d.id === id);
     if (!item || el.innerText !== "••••••") { el.innerText = "••••••"; return; }
     el.innerText = item.idnum;
-    try {
-        if (navigator.clipboard) await navigator.clipboard.writeText(item.idnum);
-        toast("ת\"ז הועתקה! 📋");
-    } catch(e) {}
-    setTimeout(() => { if(el.innerText !== "••••••") el.innerText = "••••••"; }, 4000);
+    try { if (navigator.clipboard) await navigator.clipboard.writeText(item.idnum); toast("ת\"ז הועתקה! 📋"); } catch(e) {}
+    setTimeout(() => { if (el.innerText !== "••••••") el.innerText = "••••••"; }, 4000);
 }
 
 function addToCloud() {
     const btn = document.getElementById("submitBtn");
-    const f = {
-        fn: document.getElementById("f_firstname"), ln: document.getElementById("f_lastname"),
-        id: document.getElementById("f_id"), ad: document.getElementById("f_address"),
-        ci: document.getElementById("f_city"), no: document.getElementById("f_notes")
-    };
-    if (!f.fn.value || !f.ln.value || !f.id.value || !f.ad.value || !f.ci.value) return toast("מלא את כל השדות", "#ef4444");
-    if (data.find(d => d.idnum === f.id.value.trim())) return toast("ת\"ז כבר קיימת!", "#ef4444");
+    const fields = ["f_firstname", "f_lastname", "f_id", "f_address", "f_city"];
+    const vals = fields.map(id => document.getElementById(id).value.trim());
+    if (vals.some(v => !v)) return toast("מלא את כל השדות", "#ef4444");
+    if (!/^\d{9}$/.test(vals[2])) return toast("ת\"ז חייבת להיות 9 ספרות", "#ef4444");
+
+    const dup = data.find(d => d.idnum === vals[2]) || pending.find(([, p]) => p.idnum === vals[2]);
+    if (dup) return toast("ת\"ז כבר קיימת! 🚫", "#ef4444");
 
     btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> שולח...`;
-    db.ref('pending').push({ firstname: f.fn.value, lastname: f.ln.value, idnum: f.id.value, address: f.ad.value, city: f.ci.value, notes: f.no.value })
-    .then(() => { Object.values(f).forEach(i => i.value = ""); toast("נשלח לאישור ☁️"); })
-    .finally(() => { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן`; });
+    db.ref('pending').push({ firstname: vals[0], lastname: vals[1], idnum: vals[2], address: vals[3], city: vals[4], notes: document.getElementById("f_notes").value.trim() })
+    .then(() => { fields.concat("f_notes").forEach(id => document.getElementById(id).value = ""); toast("נשלח לאישור ☁️"); })
+    .catch(() => toast("שגיאה בשליחה", "#ef4444")).finally(() => { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן`; });
 }
 
 function approvePending(id) {
-    const p = pending.find(([k]) => k === id)[1];
+    const pair = pending.find(([k]) => k === id);
+    if (!pair) return;
     const newId = Date.now().toString();
-    db.ref('codes/' + newId).set({ id: newId, ...p });
-    db.ref('pending/' + id).remove();
-    toast("אושר בהצלחה! ✅");
+    db.ref('codes/' + newId).set({ id: newId, ...pair[1] }).then(() => db.ref('pending/' + id).remove()).then(() => toast("אושר בהצלחה! ✅"));
 }
+
+function rejectPending(id) { db.ref('pending/' + id).remove(); }
 
 function editItem(id) {
     const d = data.find(x => x.id === id);
-    if (!d) return;
-    showModal(`
-        <h3 style="margin:0 0 10px 0;">עריכת רשומה</h3>
-        <div class="form-row">
-            <input id="eFirst" value="${d.firstname}" placeholder="שם פרטי">
-            <input id="eLast" value="${d.lastname}" placeholder="שם משפחה">
-        </div>
-        <div class="form-row">
-            <input id="eId" value="${d.idnum}" placeholder="תז" maxlength="9">
-            <input id="eCity" value="${d.city}" placeholder="עיר">
-        </div>
-        <input id="eAddress" value="${d.address}" placeholder="כתובת">
-        <textarea id="eNotes" placeholder="הערות">${d.notes||''}</textarea>`,
-    `<button onclick="saveEdit('${id}')" style="background:var(--success); width:100%;">שמור</button>
-     <button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`);
+    showModal(`<h3>עריכה</h3><div class="form-row"><input id="eFirst" value="${d.firstname}"><input id="eLast" value="${d.lastname}"></div><div class="form-row"><input id="eId" value="${d.idnum}" maxlength="9"><input id="eCity" value="${d.city}"></div><input id="eAddress" value="${d.address}"><textarea id="eNotes">${d.notes || ''}</textarea>`,
+    `<button onclick="saveEdit('${id}')" style="background:var(--success); width:100%;">שמור</button><button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`);
 }
 
 function saveEdit(id) {
-    db.ref('codes/' + id).update({
-        firstname: document.getElementById("eFirst").value, lastname: document.getElementById("eLast").value,
-        idnum: document.getElementById("eId").value, address: document.getElementById("eAddress").value,
-        city: document.getElementById("eCity").value, notes: document.getElementById("eNotes").value
-    });
-    closeModal(); toast("עודכן! ✏️");
+    const vals = ["eFirst", "eLast", "eId", "eAddress", "eCity"].map(id => document.getElementById(id).value.trim());
+    if (vals.some(v => !v)) return toast("מלא שדות", "#ef4444");
+    db.ref('codes/' + id).update({ firstname: vals[0], lastname: vals[1], idnum: vals[2], address: vals[3], city: vals[4], notes: document.getElementById("eNotes").value.trim() })
+    .then(() => { closeModal(); toast("עודכן! ✏️"); });
 }
 
-function confirmDelete(id, name) {
-    showModal(`<h3>מחיקה</h3><p>למחוק את <b>${name}</b>?</p>`, 
-    `<button onclick="db.ref('codes/${id}').remove(); closeModal();" style="background:var(--danger); width:100%;">מחק</button>
-     <button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`);
-}
+function confirmDelete(id, name) { showModal(`<h3>מחיקה</h3><p>למחוק את <b>${name}</b>?</p>`, `<button onclick="deleteItem('${id}')" style="background:var(--danger); width:100%;">מחק</button><button onclick="closeModal()" style="background:transparent; width:100%;">ביטול</button>`); }
+function deleteItem(id) { db.ref('codes/' + id).remove().then(() => { closeModal(); toast("נמחק! 🗑️"); }); }
 
-function showModal(content, btns) {
-    document.getElementById("modalContent").innerHTML = content;
-    document.getElementById("modalBtns").innerHTML = btns;
-    document.getElementById("modal").style.display = "block";
-}
+function showModal(content, btns) { document.getElementById("modalContent").innerHTML = content; document.getElementById("modalBtns").innerHTML = btns; document.getElementById("modal").style.display = "block"; }
 function closeModal() { document.getElementById("modal").style.display = "none"; }
+function toast(msg, color="#22c55e") { const t = document.getElementById("toast"); clearTimeout(toastTimer); t.innerText = msg; t.style.background = color; t.style.opacity = "1"; toastTimer = setTimeout(() => t.style.opacity = "0", 2500); }
 
-function toast(msg, color="#22c55e") {
-    const t = document.getElementById("toast");
-    clearTimeout(toastTimer);
-    t.innerText = msg; t.style.background = color; t.style.opacity = "1";
-    toastTimer = setTimeout(() => t.style.opacity = "0", 2500);
-}
-
-function exportJSON() {
-    const a = document.createElement("a");
-    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-    a.download = "backup.json"; a.click();
-}
+function exportJSON() { const a = document.createElement("a"); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data)); a.download = "backup.json"; a.click(); }
 function exportCSV() {
-    let csv = "\ufeffשם פרטי,שם משפחה,תעודת זהות,כתובת,עיר,הערות\n" + data.map(i => `"${i.firstname}","${i.lastname}","${i.idnum}","${i.address}","${i.city}","${i.notes}"`).join("\n");
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "backup.csv"; a.click();
+    let csv = "\ufeffשם פרטי,שם משפחה,תעודת זהות,כתובת,עיר,הערות\n" + data.map(i => `"${i.firstname}","${i.lastname}","${i.idnum}","${i.address}","${i.city}","${i.notes || ''}"`).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = "backup.csv"; a.click();
 }
+
 function importToCloud(e) {
     const reader = new FileReader();
     reader.onload = (ev) => {
-        const imported = JSON.parse(ev.target.result);
-        imported.forEach(i => {
-            const id = Date.now() + "" + Math.floor(Math.random()*1000);
-            db.ref('codes/' + id).set({ id, ...i });
-        });
-        toast("שוחזר! 🔄");
+        try {
+            const imported = JSON.parse(ev.target.result);
+            imported.forEach(i => { if (i.firstname && i.lastname) { const id = Date.now() + "" + Math.floor(Math.random() * 1000); db.ref('codes/' + id).set({ id, ...i }); } });
+            toast("שוחזר! 🔄");
+        } catch (err) { toast("קובץ לא תקין", "#ef4444"); }
     };
-    reader.readAsText(e.target.files[0]);
+    if (e.target.files[0]) reader.readAsText(e.target.files[0]);
 }
 </script>
 </body>
 </html>
+
