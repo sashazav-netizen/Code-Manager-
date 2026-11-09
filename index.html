@@ -3,314 +3,577 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Manager Cloud Pro - 2026</title>
+<title>Code Manager Cloud Pro - v3.0</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
 <style>
-    :root {
-        --primary: #3b82f6; --success: #22c55e; --danger: #ef4444; --warning: #facc15;
-        --glass-bg: rgba(15, 23, 42, 0.7); --border: rgba(255, 255, 255, 0.08);
-    }
-    body { 
-        font-family: 'Segoe UI', sans-serif; color: white; margin: 0; min-height: 100vh; display: flex; flex-direction: column;
-        background-image: url('https://i.postimg.cc/90F762pz/background.png'); background-size: cover; background-position: center; background-attachment: fixed;
-        overflow-x: hidden;
-    }
-    
-    #mainContent { display: none; flex-direction: column; min-height: 100vh; }
-    h1 { text-align: center; padding: 20px 0; background: rgba(15, 23, 42, 0.6); margin: 0; border-bottom: 1px solid var(--border); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 15px; }
-    .header-logo { height: 40px; width: auto; }
-    .container { max-width: 900px; margin: auto; padding: 15px; flex: 1; width: 100%; box-sizing: border-box; }
-    .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
-    
-    /* שורת ניווט עליונה */
-    .top-nav-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
-    .btn-nav-page { 
-        background: linear-gradient(135deg, #10b981, #059669); 
-        flex: 1; padding: 12px; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); 
-        border-radius: 50px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: white; font-weight: bold;
-    }
-    .btn-logout-top { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 20px; border-radius: 50px; color: #fca5a5; cursor: pointer; transition: 0.3s; }
-
-    /* כפתורי ניהול (שורה שנייה) */
-    .admin-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-    .btn-manage { 
-        background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 12px; 
-        color: white; padding: 15px 5px; font-size: 14px; cursor: pointer; transition: 0.3s;
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-manage:hover { background: rgba(59, 130, 246, 0.2); border-color: var(--primary); }
-    .btn-restore { border: 1px solid var(--primary); background: rgba(59, 130, 246, 0.1); }
-
-    input { padding: 14px; margin: 5px 0; border-radius: 10px; border: 1px solid #334155; background: rgba(30, 41, 59, 0.5); color: white; width: 100%; box-sizing: border-box; outline: none; font-size: 15px; }
-    button { cursor: pointer; border: none; font-weight: bold; transition: 0.3s; }
-    
-    .btn-add { background: var(--success); width: 100%; margin-top: 12px; color: white; padding: 14px; border-radius: 10px; }
-    .btn-primary { background: var(--primary); width: 100%; color: white; padding: 14px; border-radius: 10px; }
-    .btn-ghost { background: rgba(100, 116, 139, 0.3); border: 1px solid rgba(255,255,255,0.1); color: white; }
-
-    table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 16px; overflow: hidden; }
-    td, th { padding: 15px 12px; border-bottom: 1px solid var(--border); text-align: right; }
-    th { background: rgba(51, 65, 85, 0.5); color: #94a3b8; font-size: 12px; }
-    
-    .code { background: rgba(51, 65, 85, 0.6); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: monospace; }
-
-    #modal { display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); z-index: 1000; backdrop-filter: blur(10px); }
-    .modal-box { background: #1e293b; margin: 10vh auto; width: 92%; max-width: 400px; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
-    .modal-body { padding: 25px; text-align: center; }
-    .modal-actions { padding: 15px; background: rgba(15, 23, 42, 0.5); display: flex; flex-direction: column; gap: 8px; }
-
-    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 1001; font-weight: bold; color: white; backdrop-filter: blur(8px); }
-    footer { text-align: center; padding: 25px; font-size: 13px; color: #64748b; margin-top: auto; background: rgba(15, 23, 42, 0.6); border-top: 1px solid var(--border); }
-    .admin-only { display: none; }
-
-    .pagination-bar { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; }
-    .page-indicator { background: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; min-width: 100px; text-align: center; }
-    .nav-btn-sm { background: rgba(255,255,255,0.1); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: white; }
+:root{--primary:#3b82f6;--primary-dark:#2563eb;--success:#22c55e;--success-dark:#16a34a;--danger:#ef4444;--danger-dark:#dc2626;--warning:#facc15;--warning-dark:#eab308;--glass-bg:rgba(15,23,42,0.75);--glass-border:rgba(255,255,255,0.08);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--version-bg:rgba(99,102,241,0.15);--shadow:0 8px 32px rgba(0,0,0,0.25);--radius:16px;--radius-sm:10px;--transition:.3s cubic-bezier(.4,0,.2,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--text-primary);min-height:100vh;display:flex;flex-direction:column;background-image:url('https://i.postimg.cc/90F762pz/background.png');background-size:cover;background-position:center;background-attachment:fixed;overflow-x:hidden}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:rgba(15,23,42,0.3)}
+::-webkit-scrollbar-thumb{background:var(--primary);border-radius:10px}
+#mainContent{display:none;flex-direction:column;min-height:100vh}
+h1{text-align:center;padding:20px 15px;background:rgba(15,23,42,0.6);margin:0;border-bottom:1px solid var(--glass-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;gap:15px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.header-logo{height:40px;width:auto}
+.version-badge{background:var(--version-bg);border:1px solid rgba(99,102,241,0.3);padding:4px 14px;border-radius:20px;font-size:12px;color:#a5b4fc;font-weight:700;letter-spacing:.5px}
+.container{max-width:1100px;margin:0 auto;padding:15px;flex:1;width:100%}
+.glass{background:var(--glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:18px 20px;margin-bottom:15px;box-shadow:var(--shadow)}
+button{padding:12px 20px;margin:4px 0;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+button:active:not(:disabled){transform:scale(.96)}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));width:100%}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 15px rgba(59,130,246,.35)}
+.btn-success{background:linear-gradient(135deg,var(--success),var(--success-dark));width:100%;margin-top:12px}
+.btn-success:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 15px rgba(34,197,94,.35)}
+.btn-ghost{background:rgba(100,116,139,.25);border:1px solid rgba(255,255,255,.08);width:100%}
+.btn-ghost:hover:not(:disabled){background:rgba(100,116,139,.4)}
+.btn-danger{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.25);color:#fca5a5;padding:8px 18px;font-size:13px}
+.btn-danger:hover:not(:disabled){background:rgba(239,68,68,.35)}
+.btn-version{background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.25);padding:8px 18px;font-size:13px;color:#a5b4fc;border-radius:var(--radius-sm)}
+.btn-version:hover:not(:disabled){background:rgba(99,102,241,.4)}
+.btn-nav-page{background:linear-gradient(135deg,#6366f1,#4f46e5);padding:10px 24px;font-size:14px;box-shadow:0 4px 15px rgba(99,102,241,.25);border-radius:50px;text-decoration:none;color:#fff;font-weight:600;min-width:180px}
+.btn-nav-page:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(99,102,241,.35)}
+.btn-pdf{background:linear-gradient(135deg,#dc2626,#b91c1c);padding:8px 18px;font-size:13px;border-radius:var(--radius-sm)}
+.btn-pdf:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 15px rgba(220,38,38,.35)}
+input,textarea,select{padding:12px 14px;margin:4px 0;border-radius:var(--radius-sm);border:1px solid #334155;background:rgba(30,41,59,.5);color:var(--text-primary);width:100%;box-sizing:border-box;outline:none;font-size:14px;font-family:inherit;transition:var(--transition)}
+input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+input::placeholder,textarea::placeholder{color:var(--text-muted)}
+textarea{resize:vertical;min-height:50px}
+.search-wrapper{display:flex;align-items:center;gap:10px}
+.search-wrapper i{color:var(--text-muted);font-size:16px}
+.search-wrapper input{background:transparent;border:none;margin:0;padding:0}
+.search-wrapper input:focus{box-shadow:none}
+.table-wrapper{overflow-x:auto;border-radius:var(--radius) var(--radius) 0 0;border:1px solid var(--glass-border);border-bottom:none}
+table{width:100%;border-collapse:collapse;background:var(--glass-bg);min-width:450px}
+td,th{padding:14px 12px;border-bottom:1px solid var(--glass-border);text-align:right;font-size:14px;vertical-align:middle}
+th{background:rgba(51,65,85,.5);color:var(--text-secondary);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;position:sticky;top:0;z-index:5}
+tr:hover{background:rgba(255,255,255,.03)}
+th:first-child{width:38%}
+th:nth-child(2){text-align:center;width:32%}
+th:last-child{text-align:center;width:20%}
+td:first-child{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+td:nth-child(2){text-align:center;min-width:80px}
+.code-badge{background:rgba(51,65,85,.6);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'Courier New',monospace;display:inline-block;letter-spacing:1px;transition:var(--transition);font-size:14px;user-select:none}
+.code-badge:hover{background:rgba(51,65,85,.9);transform:scale(1.05)}
+.code-badge.copied{background:var(--success);color:#fff}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-muted)}
+.empty-state i{font-size:40px;margin-bottom:15px;opacity:.5}
+#modal{display:none;position:fixed;inset:0;background:rgba(2,6,23,.85);z-index:1000;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);justify-content:center;align-items:center;padding:20px}
+#modal.active{display:flex}
+.modal-box{background:#1e293b;width:100%;max-width:600px;border-radius:24px;border:1px solid var(--glass-border);overflow:hidden;max-height:90vh;display:flex;flex-direction:column;animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-body{padding:25px 25px 15px;overflow-y:auto;flex:1;text-align:center}
+.modal-body h3{margin-bottom:12px}
+.modal-body p{color:var(--text-secondary);line-height:1.6}
+.modal-actions{padding:15px 25px 25px;background:rgba(15,23,42,.4);display:flex;flex-direction:column;gap:8px}
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:12px;opacity:0;transition:var(--transition);z-index:1001;font-weight:600;color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;font-size:14px;max-width:90%;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pagination-bar{display:flex;justify-content:center;align-items:center;gap:8px;background:rgba(15,23,42,.8);padding:14px 18px;border-radius:0 0 var(--radius) var(--radius);border:1px solid var(--glass-border);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);flex-wrap:wrap}
+.page-indicator{background:var(--primary);padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;color:#fff;min-width:110px;text-align:center}
+.btn-page{background:rgba(255,255,255,.05);border:1px solid var(--glass-border);width:40px;height:40px;border-radius:var(--radius-sm);padding:0;margin:0}
+.btn-page:disabled{opacity:.3;cursor:not-allowed}
+.btn-page:hover:not(:disabled){background:rgba(255,255,255,.1)}
+.version-list-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin:4px 0;background:rgba(255,255,255,.03);border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.05);transition:var(--transition);text-align:right;gap:10px}
+.version-list-item:hover{background:rgba(255,255,255,.07)}
+.version-list-item.current{border-color:var(--success);background:rgba(34,197,94,.08)}
+.version-tag{font-family:'Courier New',monospace;font-size:13px;color:#a5b4fc;font-weight:600}
+.version-date{font-size:11px;color:var(--text-muted)}
+.version-desc{font-size:12px;color:var(--text-secondary)}
+.version-actions{display:flex;gap:6px;flex-shrink:0}
+.version-actions button{padding:4px 12px;font-size:11px;border-radius:6px;min-width:50px;margin:0}
+.btn-restore{background:var(--warning);color:#1e293b}
+.btn-restore:hover{background:var(--warning-dark)}
+.btn-delete-version{background:rgba(239,68,68,.25)}
+.btn-delete-version:hover{background:rgba(239,68,68,.4)}
+#pendingSection{border:2px solid var(--warning)!important}
+.pending-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;background:rgba(255,255,255,.03);padding:10px 14px;border-radius:var(--radius-sm);gap:10px;flex-wrap:wrap}
+.pending-item .info{font-size:13px;color:var(--text-secondary);flex:1;min-width:150px}
+.pending-item .actions{display:flex;gap:5px;flex-shrink:0}
+.pending-item .actions button{padding:4px 12px;font-size:11px;border-radius:6px;margin:0}
+#stats{font-size:13px;color:var(--text-secondary);padding:0 4px}
+footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);margin-top:auto;background:rgba(15,23,42,.6);border-top:1px solid var(--glass-border)}
+.admin-only{display:none}
+.flex-center{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}
+.flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.gap-8{gap:8px}
+.mt-8{margin-top:8px}
+.text-center{text-align:center}
+.dashboard{display:none;margin-bottom:15px}
+.dashboard.visible{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat-card{background:rgba(255,255,255,.05);border-radius:var(--radius-sm);padding:16px;text-align:center;border:1px solid var(--glass-border);transition:var(--transition)}
+.stat-card:hover{background:rgba(255,255,255,.08);transform:translateY(-2px)}
+.stat-card i{font-size:28px;margin-bottom:8px;color:var(--primary)}
+.stat-card .number{font-size:28px;font-weight:700;display:block;color:var(--text-primary)}
+.stat-card .label{font-size:12px;color:var(--text-muted);margin-top:4px;display:block}
+.stat-card.pending i{color:var(--warning)}
+.stat-card.people i{color:var(--success)}
+.stat-card.weekly i{color:#a78bfa}
+.session-timer{font-size:12px;color:var(--text-muted);padding:4px 12px;background:rgba(255,255,255,.05);border-radius:20px;display:inline-flex;align-items:center;gap:6px}
+.session-timer.warning{color:var(--warning)}
+.session-timer.danger{color:var(--danger);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap}
+.admin-actions button{flex:1;min-width:100px;padding:8px 14px;font-size:12px}
+@media(max-width:768px){.container{padding:10px}.glass{padding:14px 16px}h1{font-size:18px;padding:15px;gap:10px}.header-logo{height:30px}td,th{padding:10px 8px;font-size:13px}.version-badge{font-size:10px;padding:3px 10px}.btn-nav-page{min-width:140px;font-size:13px;padding:8px 16px}#toast{font-size:13px;padding:10px 20px;bottom:70px;white-space:normal}.modal-box{max-width:95%}.pending-item{flex-direction:column;align-items:stretch}.pending-item .actions{justify-content:flex-end}.version-list-item{flex-direction:column;align-items:stretch}.version-actions{justify-content:flex-end}th:first-child{width:32%}th:nth-child(2){width:28%}td:first-child{max-width:120px}.stats-grid{grid-template-columns:repeat(2,1fr)}.admin-actions{flex-direction:column}.admin-actions button{min-width:unset}}
+@media(max-width:480px){.pagination-bar{gap:4px;padding:10px}.btn-page{width:34px;height:34px;font-size:12px}.page-indicator{font-size:11px;min-width:80px;padding:4px 12px}.flex-between{flex-direction:column;align-items:stretch}.btn-danger{align-self:flex-start}table{min-width:350px}th:first-child{width:28%}th:nth-child(2){width:25%}td:first-child{max-width:80px;font-size:12px}td:nth-child(2){font-size:12px}.stats-grid{grid-template-columns:1fr}}
 </style>
 </head>
-
 <body>
-
 <div id="modal"><div class="modal-box"><div class="modal-body" id="modalContent"></div><div class="modal-actions" id="modalBtns"></div></div></div>
-
-<div id="mainContent">
-    <h1><img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo"> Code Manager Cloud</h1>
-
-    <div class="container">
-        <div id="loginBox" class="glass" style="text-align:center;">
-            <h3 style="margin:0 0 15px 0;">כניסה למערכת ענן</h3>
-            <input id="password" type="password" placeholder="סיסמת מנהל" onkeydown="if(event.key==='Enter') loginAdmin()">
-            <button onclick="loginAdmin()" class="btn-primary" style="margin-top:10px;"><i class="fa-solid fa-user-shield"></i> כניסה כמנהל</button>
-            <button onclick="loginGuest()" class="btn-ghost" style="margin-top:10px; width:100%; padding:14px; border-radius:10px;"><i class="fa-solid fa-eye"></i> כניסה כאורח</button>
-        </div>
-
-        <div id="app" style="display:none;">
-            <div class="top-nav-row">
-                <a href="index2.html" class="btn-nav-page">
-                    <i class="fa-solid fa-users"></i> ניהול אנשים
-                </a>
-                <button onclick="logout()" class="btn-logout-top">
-                    <i class="fa-solid fa-power-off"></i>
-                </button>
-            </div>
-
-            <div id="adminTools" class="admin-only admin-grid">
-                <button onclick="exportCSV()" class="btn-manage"><i class="fa-solid fa-file-excel"></i> אקסל</button>
-                <button onclick="exportJSON()" class="btn-manage"><i class="fa-solid fa-file-export"></i> גיבוי</button>
-                <button onclick="document.getElementById('importFile').click()" class="btn-manage btn-restore"><i class="fa-solid fa-upload"></i> שחזור</button>
-                <input type="file" id="importFile" hidden accept=".json" onchange="handleImport(event)">
-            </div>
-
-            <div class="glass" style="display:flex; align-items:center;">
-                <i class="fa-solid fa-magnifying-glass" style="color:#64748b; margin-left:10px;"></i>
-                <input id="searchInput" placeholder="חיפוש כתובת..." oninput="currentPage=1; render()" style="background:transparent; border:none; margin:0;">
-            </div>
-
-            <div id="stats" style="font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-align: left; padding: 0 5px;"></div>
-
-            <div class="glass">
-                <input id="f_address" placeholder="שם המקום / כתובת">
-                <input id="f_code" placeholder="קוד כניסה">
-                <button id="submitBtn" onclick="addToCloud()" class="btn-add">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור
-                </button>
-            </div>
-
-            <div id="pendingSection" class="glass admin-only" style="border: 2px solid var(--warning);">
-                <h4 style="margin:0 0 10px 0; color:var(--warning);"><i class="fa-solid fa-clock"></i> ממתינים לאישור:</h4>
-                <div id="pendingList"></div>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>כתובת / תיאור</th>
-                        <th style="text-align:center;">קוד</th>
-                        <th class="admin-only" style="text-align:center;">ניהול</th>
-                    </tr>
-                </thead>
-                <tbody id="table"></tbody>
-            </table>
-
-            <div id="paginationBar" class="pagination-bar">
-                <button onclick="goToPage(1)" class="nav-btn-sm"><i class="fa-solid fa-angles-right"></i></button>
-                <button onclick="changePage(-1)" class="nav-btn-sm"><i class="fa-solid fa-chevron-right"></i></button>
-                <div id="pageIndicator" class="page-indicator">עמוד 1 מתוך 1</div>
-                <button onclick="changePage(1)" class="nav-btn-sm"><i class="fa-solid fa-chevron-left"></i></button>
-                <button id="lastBtn" onclick="goToPage(999)" class="nav-btn-sm"><i class="fa-solid fa-angles-left"></i></button>
-            </div>
-        </div>
-    </div>
-
-    <footer>© כל הזכויות שמורות לאלכסנדר זבודיסקר 2026</footer>
-</div>
-
 <div id="toast"></div>
-
+<div id="mainContent">
+<h1><img src="https://i.postimg.cc/DZcGp0qh/logo.png" alt="Logo" class="header-logo"><span>Code Manager Cloud</span><span class="version-badge" id="versionDisplay">v3.0</span></h1>
+<div class="container">
+<div id="loginBox" class="glass text-center">
+<h3 style="margin:0 0 16px 0;font-size:20px;">🔐 כניסה למערכת ענן</h3>
+<input id="password" type="password" placeholder="סיסמת מנהל" onkeydown="if(event.key==='Enter') loginAdmin()">
+<button onclick="loginAdmin()" class="btn-primary mt-8"><i class="fa-solid fa-user-shield"></i> כניסה כמנהל</button>
+<button onclick="loginGuest()" class="btn-ghost mt-8"><i class="fa-solid fa-eye"></i> כניסה כאורח</button>
+<div style="font-size:12px;color:var(--text-muted);margin-top:12px;"><i class="fa-solid fa-info-circle"></i> אורח: צפייה בלבד</div>
+</div>
+<div id="app" style="display:none;">
+<div class="flex-center gap-8">
+<a href="index2.html" class="btn-nav-page"><i class="fa-solid fa-users"></i> ניהול אנשים</a>
+<button onclick="showVersionManager()" class="btn-version"><i class="fa-solid fa-code-branch"></i> גרסאות</button>
+<button onclick="toggleDashboard()" class="btn-version" id="dashboardToggle"><i class="fa-solid fa-chart-simple"></i> דשבורד</button>
+</div>
+<div class="flex-between">
+<span id="stats">טוען...</span>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+<span class="session-timer" id="sessionTimer"><i class="fa-solid fa-clock"></i> <span id="sessionTime">30:00</span></span>
+<button onclick="logout()" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
+</div>
+</div>
+<div class="dashboard" id="dashboard">
+<div class="glass">
+<h4 style="margin:0 0 15px 0;font-size:16px;"><i class="fa-solid fa-chart-simple"></i> 📊 סטטיסטיקות מערכת</h4>
+<div class="stats-grid">
+<div class="stat-card"><i class="fa-solid fa-hashtag"></i><span class="number" id="totalCodes">0</span><span class="label">סה"כ קודים</span></div>
+<div class="stat-card pending"><i class="fa-solid fa-clock"></i><span class="number" id="pendingCount">0</span><span class="label">⏳ ממתינים לאישור</span></div>
+<div class="stat-card weekly"><i class="fa-solid fa-calendar-week"></i><span class="number" id="weeklyAdditions">0</span><span class="label">📅 נוספו השבוע</span></div>
+<div class="stat-card people"><i class="fa-solid fa-users"></i><span class="number" id="totalPeople">0</span><span class="label">👥 סה"כ אנשים</span></div>
+</div>
+</div>
+<div class="glass admin-only" id="adminActions" style="display:none;">
+<h4 style="margin:0 0 12px 0;font-size:15px;"><i class="fa-solid fa-user-gear"></i> ⚙️ פעולות מנהל</h4>
+<div class="admin-actions">
+<button onclick="exportToPDF()" class="btn-pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+<button onclick="exportFullBackup()" class="btn-primary" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);"><i class="fa-solid fa-download"></i> גיבוי מלא</button>
+<button onclick="clearAllPending()" class="btn-primary" style="background:var(--danger);"><i class="fa-solid fa-broom"></i> נקה ממתינים</button>
+<button onclick="showActivityLog()" class="btn-ghost"><i class="fa-solid fa-list-check"></i> יומן פעילות</button>
+</div>
+</div>
+</div>
+<div class="glass search-wrapper">
+<i class="fa-solid fa-magnifying-glass"></i>
+<input id="searchInput" placeholder="🔍 חיפוש כתובת..." oninput="currentPage=1; render()">
+<span style="font-size:12px;color:var(--text-muted);white-space:nowrap;"><span id="resultCount">0</span> תוצאות</span>
+</div>
+<div class="glass">
+<input id="f_address" placeholder="📌 שם המקום / כתובת" maxlength="200">
+<input id="f_code" placeholder="🔑 קוד כניסה (4-20 תווים - כל תו מותר)" maxlength="20">
+<button id="submitBtn" onclick="addToCloud()" class="btn-success"><i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור</button>
+</div>
+<div id="pendingSection" class="glass admin-only" style="border-color:var(--warning)!important;">
+<h4 style="margin:0 0 12px 0;color:var(--warning);font-size:15px;"><i class="fa-solid fa-clock"></i> ⏳ ממתינים לאישור:</h4>
+<div id="pendingList"></div>
+</div>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>📌 כתובת / תיאור</th><th style="text-align:center;">🔑 קוד</th><th class="admin-only" style="text-align:center;">⚙️ ניהול</th></tr></thead>
+<tbody id="table"></tbody>
+</table>
+</div>
+<div class="pagination-bar">
+<button class="btn-page" id="firstPage" onclick="goToFirstPage()" title="עמוד ראשון"><i class="fa-solid fa-angles-right"></i></button>
+<button class="btn-page" id="prevPage" onclick="changePage(-1)" title="הקודם"><i class="fa-solid fa-chevron-right"></i></button>
+<span class="page-indicator" id="pageIndicator">עמוד 1 מתוך 1</span>
+<button class="btn-page" id="nextPage" onclick="changePage(1)" title="הבא"><i class="fa-solid fa-chevron-left"></i></button>
+<button class="btn-page" id="lastPage" onclick="goToLastPage()" title="עמוד אחרון"><i class="fa-solid fa-angles-left"></i></button>
+</div>
+</div>
+</div>
+<footer>© כל הזכויות שמורות לאלכסנדר זבודיסקר 2026 &nbsp;|&nbsp;<span id="footerVersion">v3.0</span></footer>
+</div>
 <script>
-const firebaseConfig = {
-    apiKey: "AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",
-    authDomain: "code-manager-314c2.firebaseapp.com",
-    databaseURL: "https://code-manager-314c2-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "code-manager-314c2",
-    storageBucket: "code-manager-314c2.firebasestorage.app",
-    messagingSenderId: "673454437709",
-    appId: "1:673454437709:web:690e62bb83290a086b3304"
-};
+// ============================================================
+// VERSION SYSTEM v3.0
+// ============================================================
+var VERSION_HISTORY_KEY='code_manager_versions';
+var versionHistory={versions:[{version:'1.0.0',date:'2026-04-06 19:36',description:'🚀 גרסת בסיס',changes:['השקה ראשונית','Firebase Realtime DB']},{version:'2.0.0',date:'2026-04-06 20:15',description:'📦 הוספת מערכת גרסאות',changes:['Version Manager','שמירת היסטוריית גרסאות']},{version:'2.1.0',date:'2026-04-06 21:00',description:'🔧 שיפור אבטחה',changes:['Sanitization','Rate Limiting']},{version:'3.0.0',date:new Date().toLocaleString('he-IL'),description:'🚀 שדרוג גדול',changes:['Dashboard','Session Timeout','Activity Log','PDF']}],currentIndex:3};
 
+function saveVersionHistory(){try{localStorage.setItem(VERSION_HISTORY_KEY,JSON.stringify(versionHistory))}catch(e){}}
+function loadVersionHistory(){try{var s=localStorage.getItem(VERSION_HISTORY_KEY);if(s){var p=JSON.parse(s);versionHistory.versions=p.versions||versionHistory.versions;versionHistory.currentIndex=p.currentIndex!==undefined?p.currentIndex:versionHistory.currentIndex}}catch(e){}}
+function updateVersionDisplay(){var c=versionHistory.versions[versionHistory.currentIndex];if(c){var d=document.getElementById('versionDisplay'),f=document.getElementById('footerVersion');if(d)d.textContent='v'+c.version;if(f)f.textContent='v'+c.version;document.title='Code Manager Cloud Pro - v'+c.version}}
+function getNextVersion(){var c=versionHistory.versions[versionHistory.currentIndex],p=c.version.split('.').map(Number);p[2]=(p[2]||0)+1;return p.join('.')}
+function saveNewVersion(desc,chgs){var nv={version:getNextVersion(),date:new Date().toLocaleString('he-IL'),description:desc||'📝 עדכון גרסה',changes:chgs&&chgs.length?chgs:['עדכון כללי']};versionHistory.versions.push(nv);versionHistory.currentIndex=versionHistory.versions.length-1;saveVersionHistory();updateVersionDisplay();toast('✅ גרסה '+nv.version+' נשמרה!');return nv}
+function restoreVersion(i){if(i===versionHistory.currentIndex){toast('⚠️ זו הגרסה הנוכחית','#facc15');return}var t=versionHistory.versions[i];if(!t)return;showModal('<h3>🔄 שחזור גרסה</h3><p>האם לשחזר את גרסה <strong>'+t.version+'</strong>?</p><p style="font-size:13px;color:var(--text-muted);">'+t.date+'</p><p style="font-size:13px;">'+t.description+'</p><div style="text-align:right;font-size:12px;color:var(--text-secondary);margin:10px 0;background:rgba(255,255,255,.03);padding:10px;border-radius:8px;">'+t.changes.map(function(c){return '• '+c}).join('<br>')+'</div><p style="font-size:12px;color:var(--warning);">ℹ️ שחזור משנה את תצוגת הגרסה. הקוד עצמו נשאר זהה.</p>','<button onclick="confirmRestore('+i+')" class="btn-restore" style="width:100%;">🔄 שחזר גרסה</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
+function confirmRestore(i){versionHistory.currentIndex=i;saveVersionHistory();updateVersionDisplay();closeModal();toast('🔄 שוחזרה גרסה '+versionHistory.versions[i].version);setTimeout(function(){location.reload()},800)}
+function showVersionManager(){if(!isAdmin){toast('🔒 רק מנהל יכול לנהל גרסאות','#ef4444');return}var h='<h3><i class="fa-solid fa-code-branch"></i> ניהול גרסאות</h3><p style="font-size:13px;color:var(--text-secondary);">גרסה נוכחית: <strong style="color:white;">'+versionHistory.versions[versionHistory.currentIndex].version+'</strong></p><hr style="border-color:var(--glass-border);margin:12px 0;"><div style="max-height:350px;overflow-y:auto;text-align:right;">';versionHistory.versions.forEach(function(v,i){var isCurrent=i===versionHistory.currentIndex;h+='<div class="version-list-item '+(isCurrent?'current':'')+'"><div style="flex:1;min-width:0;"><div class="version-tag">v'+v.version+(isCurrent?' ⭐ נוכחי':'')+'</div><div class="version-date">'+v.date+'</div><div class="version-desc">'+v.description+'</div></div><div class="version-actions">'+(isCurrent?'<span style="font-size:11px;color:var(--success);">✅ נוכחי</span>':'<button onclick="restoreVersion('+i+')" class="btn-restore">שחזר</button><button onclick="deleteVersion('+i+')" class="btn-delete-version"><i class="fa-solid fa-trash"></i></button>')+'</div></div>'});h+='</div><hr style="border-color:var(--glass-border);margin:12px 0;"><div style="display:flex;gap:8px;flex-wrap:wrap;"><button onclick="showSaveVersionModal()" class="btn-success" style="flex:1;min-width:120px;">💾 שמור גרסה</button><button onclick="closeModal()" class="btn-ghost" style="flex:1;min-width:80px;">סגור</button></div>';showModal(h,'')}
+function showSaveVersionModal(){showModal('<h3>💾 שמירת גרסה חדשה</h3><p style="font-size:13px;color:var(--text-secondary);">הגרסה החדשה תהיה: <strong>'+getNextVersion()+'</strong></p><input id="newVersionDesc" placeholder="📝 תיאור הגרסה" style="margin:4px 0;"><textarea id="newVersionChanges" placeholder="📋 רשימת שינויים (כל שינוי בשורה חדשה)" style="min-height:80px;margin:4px 0;"></textarea><p style="font-size:11px;color:var(--text-muted);text-align:right;"><i class="fa-solid fa-info-circle"></i> שמור שינויים משמעותיים בגרסה</p>','<button onclick="saveNewVersionFromModal()" class="btn-success" style="width:100%;">💾 שמור גרסה</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
+function saveNewVersionFromModal(){var d=document.getElementById('newVersionDesc')?document.getElementById('newVersionDesc').value.trim():'📝 עדכון גרסה';var ct=document.getElementById('newVersionChanges')?document.getElementById('newVersionChanges').value.trim():'';var c=ct.split('\n').filter(function(x){return x.trim()});saveNewVersion(d,c.length?c:['עדכון כללי']);closeModal();setTimeout(function(){showVersionManager()},500)}
+function deleteVersion(i){if(i===versionHistory.currentIndex){toast('⚠️ לא ניתן למחוק את הגרסה הנוכחית','#ef4444');return}if(versionHistory.versions.length<=1){toast('⚠️ חייב להיות לפחות גרסה אחת','#ef4444');return}showModal('<h3>🗑️ מחיקת גרסה</h3><p>האם למחוק את גרסה <strong>'+versionHistory.versions[i].version+'</strong>?</p><p style="font-size:13px;color:var(--text-muted);">'+versionHistory.versions[i].date+'</p>','<button onclick="confirmDeleteVersion('+i+')" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק גרסה</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
+function confirmDeleteVersion(i){versionHistory.versions.splice(i,1);if(versionHistory.currentIndex>=versionHistory.versions.length)versionHistory.currentIndex=versionHistory.versions.length-1;saveVersionHistory();updateVersionDisplay();closeModal();toast('🗑️ גרסה נמחקה');setTimeout(function(){showVersionManager()},500)}
+
+// ============================================================
+// SECURITY HELPERS
+// ============================================================
+function sanitizeHTML(s){if(!s)return '';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function escapeJS(s){if(!s)return '';return String(s).replace(/[\\'"]/g,'\\$&').replace(/\n/g,'\\n')}
+var loginAttempts={};
+function checkRateLimit(){var key='global',now=Date.now();if(!loginAttempts[key])loginAttempts[key]=[];loginAttempts[key]=loginAttempts[key].filter(function(t){return now-t<60000});if(loginAttempts[key].length>=5){toast('⚠️ יותר מדי ניסיונות. חכה דקה.','#ef4444');return false}loginAttempts[key].push(now);return true}
+
+// ============================================================
+// FIREBASE CONFIG
+// ============================================================
+var firebaseConfig={apiKey:"AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",authDomain:"code-manager-314c2.firebaseapp.com",databaseURL:"https://code-manager-314c2-default-rtdb.europe-west1.firebasedatabase.app",projectId:"code-manager-314c2",storageBucket:"code-manager-314c2.firebasestorage.app",messagingSenderId:"673454437709",appId:"1:673454437709:web:690e62bb83290a086b3304"};
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+var db=firebase.database();
 
-let data = [], pending = [], isAdmin = sessionStorage.getItem("isAdmin") === "true";
-let currentPage = 1, itemsPerPage = 10, totalPages = 1, toastTimer;
+// ============================================================
+// APPLICATION STATE
+// ============================================================
+var data=[],pending=[],isAdmin=sessionStorage.getItem("isAdmin")==="true",currentPage=1,itemsPerPage=10,toastTimer=null;
+var peopleData=[];
+var ADMIN_HASH="e1045583d773c03b76cab17c591d36b1d932e8b74bd0e83190dacd597826ba19";
 
-window.onload = function() {
-    if (isAdmin) showApp();
-    showModal(`<h3>הצהרת פרטיות</h3><p>המידע במערכת מאובטח ונועד לצורכי עבודה בלבד.</p>`, 
-    `<button onclick="confirmEntry()" style="background:var(--success); width:100%; color:white; padding:12px; border-radius:10px;">אישור וכניסה</button>`);
-};
+// ============================================================
+// SESSION TIMEOUT
+// ============================================================
+var sessionTimer=null;
+var sessionCountdown=30*60;
+var sessionInterval=null;
 
-function confirmEntry() { closeModal(); document.getElementById('mainContent').style.display = 'flex'; }
-
-db.ref('house_codes').on('value', s => { data = s.val() ? Object.values(s.val()) : []; render(); });
-db.ref('pending_houses').on('value', s => { pending = s.val() ? Object.entries(s.val()) : []; render(); });
-
-async function loginAdmin() {
-    if (document.getElementById("password").value === "772555") { 
-        isAdmin = true; sessionStorage.setItem("isAdmin", "true");
-        showApp(); toast("שלום מנהל 👑"); 
-    } else { toast("סיסמה שגויה", "#ef4444"); }
+function resetSessionTimer(){
+    if(!isAdmin)return;
+    sessionCountdown=30*60;
+    updateSessionDisplay();
+    clearInterval(sessionInterval);
+    sessionInterval=setInterval(function(){
+        sessionCountdown--;
+        updateSessionDisplay();
+        if(sessionCountdown<=0){
+            clearInterval(sessionInterval);
+            toast('⏰ התנתקת עקב חוסר פעילות','#ef4444');
+            logout();
+        }
+    },1000);
+    clearTimeout(sessionTimer);
+    sessionTimer=setTimeout(function(){
+        if(isAdmin){
+            toast('⏰ התנתקת עקב חוסר פעילות','#ef4444');
+            logout();
+        }
+    },30*60*1000);
 }
 
-function loginGuest() { isAdmin = false; showApp(); }
-function logout() { isAdmin = false; sessionStorage.removeItem("isAdmin"); location.reload(); }
+function updateSessionDisplay(){
+    var el=document.getElementById('sessionTime');
+    if(!el)return;
+    var mins=Math.floor(sessionCountdown/60);
+    var secs=sessionCountdown%60;
+    el.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+    var timer=document.getElementById('sessionTimer');
+    if(sessionCountdown<60){
+        timer.className='session-timer danger';
+    }else if(sessionCountdown<300){
+        timer.className='session-timer warning';
+    }else{
+        timer.className='session-timer';
+    }
+}
 
-function showApp() {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    if (isAdmin) {
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = (el.tagName==='TH'||el.tagName==='TD')?'table-cell':'grid');
+// ============================================================
+// ACTIVITY LOG
+// ============================================================
+function logActivity(action,details){
+    if(!isAdmin)return;
+    db.ref('activity_logs').push({action:action,details:details,timestamp:new Date().toISOString(),user:'admin'});
+}
+
+function showActivityLog(){
+    if(!isAdmin){toast('🔒 רק מנהל יכול לצפות ביומן','#ef4444');return}
+    db.ref('activity_logs').limitToLast(50).once('value',function(snap){
+        var logs=snap.val()?Object.values(snap.val()).reverse():[];
+        if(logs.length===0){
+            showModal('<h3>📋 יומן פעילות</h3><p>אין פעילות רשומה</p>','<button onclick="closeModal()" class="btn-ghost" style="width:100%;">סגור</button>');
+            return;
+        }
+        var html='<h3><i class="fa-solid fa-list-check"></i> יומן פעילות</h3><div style="max-height:400px;overflow-y:auto;text-align:right;">';
+        logs.forEach(function(l){
+            var date=new Date(l.timestamp).toLocaleString('he-IL');
+            html+='<div style="padding:8px 12px;margin:4px 0;background:rgba(255,255,255,.03);border-radius:6px;border-right:3px solid var(--primary);font-size:13px;"><div><strong>'+l.action+'</strong></div><div style="font-size:12px;color:var(--text-muted);">'+l.details+'</div><div style="font-size:11px;color:var(--text-muted);">'+date+'</div></div>';
+        });
+        html+='</div>';
+        showModal(html,'<button onclick="closeModal()" class="btn-ghost" style="width:100%;">סגור</button>');
+    });
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function toggleDashboard(){
+    var dash=document.getElementById('dashboard');
+    var btn=document.getElementById('dashboardToggle');
+    if(dash.classList.contains('visible')){
+        dash.classList.remove('visible');
+        btn.innerHTML='<i class="fa-solid fa-chart-simple"></i> דשבורד';
+    }else{
+        dash.classList.add('visible');
+        btn.innerHTML='<i class="fa-solid fa-xmark"></i> סגור דשבורד';
+        updateDashboard();
+    }
+}
+
+function updateDashboard(){
+    if(!isAdmin)return;
+    db.ref('codes').once('value',function(snap){
+        var ppl=snap.val()?Object.values(snap.val()):[];
+        document.getElementById('totalPeople').textContent=ppl.length;
+        peopleData=ppl;
+    });
+    document.getElementById('totalCodes').textContent=data.length;
+    document.getElementById('pendingCount').textContent=pending.length;
+    document.getElementById('weeklyAdditions').textContent=0;
+}
+
+// ============================================================
+// EXPORT TO PDF
+// ============================================================
+function exportToPDF(){
+    if(!isAdmin){toast('🔒 רק מנהל יכול לייצא PDF','#ef4444');return}
+    try{
+        var doc = new window.jspdf.jsPDF('l', 'mm', 'a4');
+        doc.setFontSize(18);
+        doc.setTextColor(59,130,246);
+        doc.text('📋 Code Manager - רשימת קודים', 14, 20);
+        doc.setFontSize(10);
+        doc.setTextColor(100,116,139);
+        doc.text('תאריך: '+new Date().toLocaleString('he-IL'), 14, 28);
+        doc.text('סה"כ קודים: '+data.length, 14, 34);
+        var tableData = data.map(function(d){return [d.address||'—', d.code||'—']});
+        doc.autoTable({
+            startY:40,
+            head:[['כתובת / תיאור','קוד']],
+            body:tableData,
+            theme:'grid',
+            headStyles:{fillColor:[59,130,246],textColor:[255,255,255]},
+            styles:{font:'hebrew',fontSize:9},
+            columnStyles:{0:{cellWidth:120},1:{cellWidth:60}}
+        });
+        doc.setFontSize(8);
+        doc.setTextColor(100,116,139);
+        doc.text('© כל הזכויות שמורות - Code Manager Cloud', 14, doc.lastAutoTable.finalY+10);
+        doc.save('code_manager_'+new Date().toISOString().slice(0,10)+'.pdf');
+        toast('📄 PDF נוצר בהצלחה!');
+        logActivity('ייצוא PDF','ייצא '+data.length+' קודים');
+    }catch(e){
+        toast('❌ שגיאה ביצירת PDF: '+e.message,'#ef4444');
+    }
+}
+
+// ============================================================
+// EXPORT FULL BACKUP
+// ============================================================
+function exportFullBackup(){
+    if(!isAdmin){toast('🔒 רק מנהל יכול לבצע גיבוי','#ef4444');return}
+    var backup={codes:data,pending:pending,version:versionHistory.versions[versionHistory.currentIndex].version,timestamp:new Date().toISOString()};
+    var a=document.createElement('a');
+    a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(backup,null,2));
+    a.download='full_backup_'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();
+    toast('📦 גיבוי מלא יוצא');
+    logActivity('גיבוי מלא','גובה '+data.length+' קודים ו-'+pending.length+' ממתינים');
+}
+
+// ============================================================
+// CLEAR ALL PENDING
+// ============================================================
+function clearAllPending(){
+    if(!isAdmin){toast('🔒 רק מנהל','#ef4444');return}
+    if(pending.length===0){toast('אין ממתינים לנקות','#facc15');return}
+    showModal('<h3>🧹 ניקוי ממתינים</h3><p>האם למחוק את כל <strong>'+pending.length+'</strong> הרשומות הממתינות?</p><p style="font-size:13px;color:var(--danger);">⚠️ פעולה זו אינה ניתנת לביטול</p>','<button onclick="confirmClearPending()" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק הכל</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>');
+}
+function confirmClearPending(){
+    pending.forEach(function(item){db.ref('pending_houses/'+item[0]).remove()});
+    closeModal();
+    toast('🧹 נמחקו כל הממתינים');
+    logActivity('ניקוי ממתינים','נמחקו '+pending.length+' רשומות');
+}
+
+// ============================================================
+// HASH FUNCTION
+// ============================================================
+async function hashPass(s){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(b){return b.toString(16).padStart(2,'0')}).join('')}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+loadVersionHistory();updateVersionDisplay();
+
+window.onload=function(){
+    if(isAdmin)showApp();
+    showModal('<h3>📋 הצהרת פרטיות</h3><p style="font-size:14px;line-height:1.8;">המידע במערכת מאובטח ונועד לצורכי עבודה בלבד.<br>אין להפיץ את הקודים ללא אישור.<br><br><span style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> הנתונים מוצפנים ומוגנים</span></p>','<button onclick="confirmEntry()" class="btn-success" style="width:100%;">✅ אישור וכניסה</button><button onclick="rejectEntry()" class="btn-primary" style="width:100%;background:var(--danger);">🚫 ביטול</button>')
+};
+function confirmEntry(){closeModal();document.getElementById('mainContent').style.display='flex';toast('👋 שלום! ברוך הבא למערכת')}
+function rejectEntry(){window.location.href='https://www.google.com'}
+
+db.ref('house_codes').on('value',function(s){data=s.val()?Object.values(s.val()):[];render();if(isAdmin)updateDashboard()});
+db.ref('pending_houses').on('value',function(s){pending=s.val()?Object.entries(s.val()):[];render();if(isAdmin)updateDashboard()});
+
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+async function loginAdmin(){
+    if(!checkRateLimit())return;
+    var i=document.getElementById('password').value;
+    if(!i)return toast('🔑 הכנס סיסמה','#ef4444');
+    var ih=await hashPass(i);
+    if(ih===ADMIN_HASH){
+        isAdmin=true;
+        sessionStorage.setItem('isAdmin','true');
+        showApp();
+        toast('👑 מנהל מחובר');
+        logActivity('התחברות','מנהל התחבר למערכת');
+        resetSessionTimer();
+    }else{
+        toast('❌ סיסמה שגויה','#ef4444');
+        logActivity('ניסיון כניסה כושל','סיסמה שגויה');
+    }
+}
+function loginGuest(){isAdmin=false;showApp();toast('👁️ כניסת אורח - צפייה בלבד')}
+function logout(){
+    if(isAdmin)logActivity('התנתקות','מנהל התנתק מהמערכת');
+    clearInterval(sessionInterval);
+    clearTimeout(sessionTimer);
+    isAdmin=false;
+    sessionStorage.removeItem('isAdmin');
+    document.getElementById('app').style.display='none';
+    document.getElementById('loginBox').style.display='block';
+    document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='none'});
+    document.getElementById('dashboard').classList.remove('visible');
+    toast('👋 התנתקת');
+}
+function showApp(){
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.querySelectorAll('.admin-only').forEach(function(el){
+        if(isAdmin){
+            if(el.tagName==='TH'||el.tagName==='TD')el.style.display='table-cell';
+            else el.style.display='block';
+        }else el.style.display='none'
+    });
+    if(isAdmin){
+        document.getElementById('adminActions').style.display='block';
+        document.getElementById('sessionTimer').style.display='inline-flex';
+        resetSessionTimer();
+        updateDashboard();
+    }else{
+        document.getElementById('adminActions').style.display='none';
+        document.getElementById('sessionTimer').style.display='none';
     }
     render();
 }
 
-function render() {
-    const term = document.getElementById("searchInput").value.toLowerCase();
-    let filtered = data.filter(d => (d.address || "").toLowerCase().includes(term));
-    filtered.sort((a, b) => (a.address || "").localeCompare(b.address || "", 'he'));
+// ============================================================
+// RENDER FUNCTION
+// ============================================================
+function render(){var t=(document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase().trim();var f=data.filter(function(d){return(d.address||'').toLowerCase().includes(t)});f.sort(function(a,b){return(a.address||'').localeCompare(b.address||'','he')});var total=f.length,totalPages=Math.ceil(total/itemsPerPage)||1;if(currentPage>totalPages)currentPage=totalPages;var pageItems=f.slice((currentPage-1)*itemsPerPage,currentPage*itemsPerPage);document.getElementById('stats').textContent='📊 רשומות: '+total;document.getElementById('resultCount').textContent=total;document.getElementById('pageIndicator').textContent='עמוד '+currentPage+' מתוך '+totalPages;document.getElementById('firstPage').disabled=currentPage===1;document.getElementById('prevPage').disabled=currentPage===1;document.getElementById('nextPage').disabled=currentPage===totalPages;document.getElementById('lastPage').disabled=currentPage===totalPages;var tb=document.getElementById('table');if(total===0){tb.innerHTML='<tr><td colspan="'+(isAdmin?3:2)+'" class="empty-state"><i class="fa-solid fa-box-open"></i><div>אין רשומות</div><div style="font-size:13px;color:var(--text-muted);">הוסף קוד חדש למעלה</div></td></tr>';document.querySelector('.pagination-bar').style.display='none'}else{document.querySelector('.pagination-bar').style.display='flex';tb.innerHTML=pageItems.map(function(d){var sa=sanitizeHTML(d.address),sc=sanitizeHTML(d.code),si=sanitizeHTML(d.id);return'<tr><td title="'+sa+'">'+sa+'</td><td style="text-align:center;"><span class="code-badge" onclick="copyCode(this,\''+escapeJS(sc)+'\')" data-code="'+escapeJS(sc)+'">••••</span></td>'+(isAdmin?'<td style="text-align:center;"><i class="fa-solid fa-pen" onclick="editItem(\''+escapeJS(si)+'\')" style="color:var(--primary);cursor:pointer;margin-left:12px;font-size:16px;" title="עריכה"></i><i class="fa-solid fa-trash" onclick="confirmDelete(\''+escapeJS(si)+'\',\''+escapeJS(sa)+'\')" style="color:var(--danger);cursor:pointer;font-size:16px;" title="מחיקה"></i></td>':'')+'</tr>'}).join('')}var ps=document.getElementById('pendingSection'),pl=document.getElementById('pendingList');if(isAdmin&&pending.length>0){ps.style.display='block';pl.innerHTML=pending.map(function(item){var id=item[0],p=item[1];return'<div class="pending-item"><span class="info">'+sanitizeHTML(p.address)+' | 🔑 '+sanitizeHTML(p.code)+'</span><div class="actions"><button onclick="approvePending(\''+escapeJS(id)+'\')" class="btn-success" style="padding:4px 12px;font-size:11px;margin:0;">✅ אשר</button><button onclick="db.ref(\'pending_houses/'+escapeJS(id)+'\').remove()" class="btn-primary" style="background:var(--danger);padding:4px 12px;font-size:11px;margin:0;">🗑️ מחק</button></div></div>'}).join('')}else{ps.style.display='none'}}
 
-    totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-    const pageItems = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+// ============================================================
+// COPY CODE
+// ============================================================
+function copyCode(el,code){if(!code)return;navigator.clipboard.writeText(code).catch(function(){});el.textContent=code;el.classList.add('copied');toast('📋 הקוד הועתק!');setTimeout(function(){el.textContent='••••';el.classList.remove('copied')},3000)}
 
-    document.getElementById("stats").innerText = `רשומות: ${filtered.length}`;
-    document.getElementById("pageIndicator").innerText = `עמוד ${currentPage} מתוך ${totalPages}`;
-
-    document.getElementById("table").innerHTML = pageItems.map(d => `
-        <tr>
-            <td style="font-weight:600;">${d.address}</td>
-            <td style="text-align:center;"><span class="code" onclick="copyCode(this, '${d.code}')">••••</span></td>
-            ${isAdmin ? `<td style="text-align:center;">
-                <i class="fa-solid fa-pen" onclick="editItem('${d.id}')" style="color:var(--primary); cursor:pointer; margin-left:15px;"></i>
-                <i class="fa-solid fa-trash" onclick="confirmDelete('${d.id}', '${d.address}')" style="color:var(--danger); cursor:pointer;"></i>
-            </td>` : ''}
-        </tr>`).join("");
-
-    if (isAdmin && pending.length > 0) {
-        document.getElementById("pendingSection").style.display = "block";
-        document.getElementById("pendingList").innerHTML = pending.map(([id, p]) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
-                <span>${p.address} | ${p.code}</span>
-                <button onclick="approvePending('${id}')" style="background:var(--success); color:white; padding:5px 10px; font-size:12px; border-radius:5px;">אשר</button>
-            </div>`).join("");
-    } else { document.getElementById("pendingSection").style.display = "none"; }
-}
-
-function changePage(dir) { currentPage = Math.max(1, Math.min(totalPages, currentPage + dir)); render(); }
-function goToPage(p) { currentPage = (p === 999) ? totalPages : p; render(); }
-
-function exportCSV() {
-    let csv = "\uFEFFכתובת,קוד\n";
-    data.forEach(d => { csv += `"${d.address}","${d.code}"\n`; });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    link.download = "Houses.csv"; link.click();
-}
-
-function exportJSON() {
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
-    link.download = "Backup.json"; link.click();
-}
-
-function handleImport(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        try {
-            const imported = JSON.parse(ev.target.result);
-            if (confirm(`לשחזר ${imported.length} בתים?`)) {
-                imported.forEach(item => db.ref('house_codes/' + item.id).set(item));
-                toast("השחזור בוצע! ✅");
-            }
-        } catch (err) { alert("קובץ לא תקין"); }
-    };
-    reader.readAsText(file);
-}
-
-function copyCode(el, code) {
-    navigator.clipboard.writeText(code); el.innerText = code;
-    toast("הועתק! 📋"); setTimeout(() => el.innerText = "••••", 3000);
-}
-
-function addToCloud() {
-    const addr = document.getElementById("f_address").value.trim();
-    const code = document.getElementById("f_code").value.trim();
-    if (!addr || !code) return toast("מלא שדות", "#ef4444");
-    const tempId = Date.now().toString();
-    db.ref('pending_houses/' + tempId).set({ id: tempId, address: addr, code: code })
-    .then(() => {
-        document.getElementById("f_address").value = ""; document.getElementById("f_code").value = "";
-        toast("נשלח לאישור ☁️");
+// ============================================================
+// ADD TO CLOUD - מתוקן! מאפשר כל תו
+// ============================================================
+function addToCloud(){
+    var addr=document.getElementById('f_address').value.trim();
+    var code=document.getElementById('f_code').value.trim();
+    var btn=document.getElementById('submitBtn');
+    
+    if(!addr)return toast('📌 מלא כתובת','#ef4444');
+    if(!code)return toast('🔑 מלא קוד','#ef4444');
+    
+    // ===== תיקון: בודק רק אורך, מאפשר כל תו =====
+    if(code.length < 4 || code.length > 20){
+        return toast('🔑 קוד חייב להיות 4-20 תווים','#ef4444');
+    }
+    // =============================================
+    
+    if(data.some(function(i){return i.address===addr}))return toast('⚠️ כתובת זו כבר קיימת','#facc15');
+    if(pending.some(function(item){return item[1].address===addr}))return toast('⏳ הכתובת כבר ממתינה לאישור','#facc15');
+    
+    btn.disabled=true;
+    btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> שולח...';
+    var tempId=Date.now().toString();
+    db.ref('pending_houses/'+tempId).set({id:tempId,address:addr,code:code}).then(function(){
+        document.getElementById('f_address').value='';
+        document.getElementById('f_code').value='';
+        toast('☁️ נשלח לאישור מנהל');
+        if(isAdmin)logActivity('הוספת קוד',addr+' - '+code);
+    }).catch(function(){
+        toast('❌ שגיאה בשליחה','#ef4444');
+    }).finally(function(){
+        btn.disabled=false;
+        btn.innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור';
     });
 }
 
-function approvePending(id) {
-    const itemPair = pending.find(([k]) => k === id);
-    if (!itemPair) return;
-    const p = itemPair[1];
-    db.ref('house_codes/' + id).set({ id: id, address: p.address, code: p.code });
-    db.ref('pending_houses/' + id).remove();
-}
+// ============================================================
+// APPROVE PENDING
+// ============================================================
+function approvePending(id){var pair=pending.find(function(item){return item[0]===id});if(!pair)return;var p=pair[1],newId=Date.now().toString();db.ref('house_codes/'+newId).set({id:newId,address:p.address,code:p.code}).then(function(){db.ref('pending_houses/'+id).remove();toast('✅ אושר בהצלחה!');if(isAdmin)logActivity('אישור קוד',p.address+' - '+p.code)}).catch(function(){toast('❌ שגיאה באישור','#ef4444')})}
 
-function editItem(id) {
-    const d = data.find(x => x.id === id);
-    showModal(`<h3>עריכה</h3><input id="eAddr" value="${d.address}"><input id="eCode" value="${d.code}">`,
-    `<button onclick="saveEdit('${id}')" style="background:var(--success); color:white; padding:10px; border-radius:10px;">שמור</button>
-     <button onclick="closeModal()" style="background:transparent; color:white;">ביטול</button>`);
-}
+// ============================================================
+// EDIT ITEM
+// ============================================================
+function editItem(id){var d=data.find(function(x){return x.id===id});if(!d)return toast('❌ רשומה לא נמצאה','#ef4444');showModal('<h3>✏️ עריכת רשומה</h3><input id="eAddr" value="'+sanitizeHTML(d.address)+'" placeholder="📌 כתובת" maxlength="200"><input id="eCode" value="'+sanitizeHTML(d.code)+'" placeholder="🔑 קוד" maxlength="20">','<button onclick="saveEdit(\''+escapeJS(id)+'\')" class="btn-success" style="width:100%;">💾 שמור</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
+function saveEdit(id){var addr=document.getElementById('eAddr').value.trim(),code=document.getElementById('eCode').value.trim();if(!addr)return toast('📌 מלא כתובת','#ef4444');if(!code)return toast('🔑 מלא קוד','#ef4444');if(code.length<4||code.length>20)return toast('🔑 קוד חייב להיות 4-20 תווים','#ef4444');db.ref('house_codes/'+id).update({address:addr,code:code}).then(function(){closeModal();toast('✅ עודכן!');if(isAdmin)logActivity('עריכת קוד',addr+' - '+code)}).catch(function(){toast('❌ שגיאה בעדכון','#ef4444')})}
 
-function saveEdit(id) {
-    db.ref('house_codes/' + id).update({ address: document.getElementById("eAddr").value, code: document.getElementById("eCode").value });
-    closeModal();
-}
+// ============================================================
+// DELETE ITEM
+// ============================================================
+function confirmDelete(id,name){showModal('<h3>🗑️ מחיקה</h3><p>האם למחוק את <strong>'+sanitizeHTML(name)+'</strong>?</p><p style="font-size:13px;color:var(--text-muted);">פעולה זו אינה ניתנת לביטול</p>','<button onclick="deleteItem(\''+escapeJS(id)+'\')" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
+function deleteItem(id){db.ref('house_codes/'+id).remove().then(function(){closeModal();toast('🗑️ נמחק!');if(isAdmin)logActivity('מחיקת קוד',id)}).catch(function(){toast('❌ שגיאה במחיקה','#ef4444')})}
 
-function confirmDelete(id, name) {
-    showModal(`<h3>מחיקה</h3><p>למחוק את ${name}?</p>`, 
-    `<button onclick="db.ref('house_codes/${id}').remove(); closeModal();" style="background:var(--danger); color:white; padding:10px; border-radius:10px;">מחק</button>
-     <button onclick="closeModal()" style="background:transparent; color:white;">ביטול</button>`);
-}
+// ============================================================
+// PAGINATION
+// ============================================================
+function changePage(dir){var total=data.filter(function(d){return(d.address||'').toLowerCase().includes((document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase())}).length;var totalPages=Math.ceil(total/itemsPerPage)||1;currentPage=Math.max(1,Math.min(currentPage+dir,totalPages));render();window.scrollTo({top:0,behavior:'smooth'})}
+function goToFirstPage(){currentPage=1;render();window.scrollTo({top:0,behavior:'smooth'})}
+function goToLastPage(){var total=data.filter(function(d){return(d.address||'').toLowerCase().includes((document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase())}).length;currentPage=Math.ceil(total/itemsPerPage)||1;render();window.scrollTo({top:0,behavior:'smooth'})}
 
-function showModal(c, b) { document.getElementById("modalContent").innerHTML = c; document.getElementById("modalBtns").innerHTML = b; document.getElementById("modal").style.display = "block"; }
-function closeModal() { document.getElementById("modal").style.display = "none"; }
-function toast(msg, color="#22c55e") {
-    const t = document.getElementById("toast");
-    clearTimeout(toastTimer); t.innerText = msg; t.style.background = color; t.style.opacity = "1";
-    toastTimer = setTimeout(() => t.style.opacity = "0", 2500);
-}
+// ============================================================
+// UI HELPERS
+// ============================================================
+function showModal(c,b){document.getElementById('modalContent').innerHTML=c;document.getElementById('modalBtns').innerHTML=b||'';document.getElementById('modal').classList.add('active');document.getElementById('modal').style.display='flex'}
+function closeModal(){document.getElementById('modal').classList.remove('active');document.getElementById('modal').style.display='none'}
+function toast(msg,color){color=color||'#22c55e';var t=document.getElementById('toast');clearTimeout(toastTimer);t.textContent=msg;t.style.background=color;t.classList.add('show');toastTimer=setTimeout(function(){t.classList.remove('show')},2800)}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')closeModal();
+    if(e.ctrlKey&&e.key==='f'){e.preventDefault();var el=document.getElementById('searchInput');if(el)el.focus()}
+    if(e.ctrlKey&&e.key==='s'&&document.getElementById('app').style.display!=='none'){e.preventDefault();addToCloud()}
+    if(e.ctrlKey&&e.key==='d'&&isAdmin){e.preventDefault();toggleDashboard()}
+});
+
+// ============================================================
+// RESET SESSION ON ACTIVITY
+// ============================================================
+document.addEventListener('click',function(){if(isAdmin)resetSessionTimer()});
+document.addEventListener('keydown',function(){if(isAdmin)resetSessionTimer()});
+document.addEventListener('mousemove',function(){if(isAdmin)resetSessionTimer()});
 </script>
 </body>
 </html>
