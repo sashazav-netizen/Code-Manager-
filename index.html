@@ -456,8 +456,14 @@ function loginAdmin(){
     .catch(function(error){
         var msg = '❌ שגיאה בהתחברות';
         if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') msg = '❌ אימייל או סיסמה שגויים';
-        if (error.code === 'auth/invalid-email') msg = '❌ אימייל לא תקין';
+        else if (error.code === 'auth/invalid-email') msg = '❌ אימייל לא תקין';
+        else if (error.code === 'auth/invalid-credential') msg = '❌ אימייל או סיסמה שגויים';
+        else if (error.code === 'auth/network-request-failed') msg = '❌ בעיית רשת - בדוק חיבור';
+        else if (error.code === 'auth/too-many-requests') msg = '⏳ болше מדי ניסיונות. המתן';
+        else msg = '❌ שגיאה: ' + error.code;
+        
         toast(msg, '#ef4444');
+        console.error("Auth Error:", error);
     });
 }
 
@@ -508,7 +514,7 @@ function showApp(){
 }
 
 // ============================================================
-// RENDER FUNCTION (ללא שינוי מהותי)
+// RENDER FUNCTION
 // ============================================================
 function render(){var t=(document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase().trim();var f=data.filter(function(d){return(d.address||'').toLowerCase().includes(t)});f.sort(function(a,b){return(a.address||'').localeCompare(b.address||'','he')});var total=f.length,totalPages=Math.ceil(total/itemsPerPage)||1;if(currentPage>totalPages)currentPage=totalPages;var pageItems=f.slice((currentPage-1)*itemsPerPage,currentPage*itemsPerPage);document.getElementById('stats').textContent='📊 רשומות: '+total;document.getElementById('resultCount').textContent=total;document.getElementById('pageIndicator').textContent='עמוד '+currentPage+' מתוך '+totalPages;document.getElementById('firstPage').disabled=currentPage===1;document.getElementById('prevPage').disabled=currentPage===1;document.getElementById('nextPage').disabled=currentPage===totalPages;document.getElementById('lastPage').disabled=currentPage===totalPages;var tb=document.getElementById('table');if(total===0){tb.innerHTML='<tr><td colspan="'+(isAdmin?3:2)+'" class="empty-state"><i class="fa-solid fa-box-open"></i><div>אין רשומות</div><div style="font-size:13px;color:var(--text-muted);">הוסף קוד חדש למעלה</div></td></tr>';document.querySelector('.pagination-bar').style.display='none'}else{document.querySelector('.pagination-bar').style.display='flex';tb.innerHTML=pageItems.map(function(d){var sa=sanitizeHTML(d.address),sc=sanitizeHTML(d.code),si=sanitizeHTML(d.id);return'<tr><td title="'+sa+'">'+sa+'</td><td style="text-align:center;"><span class="code-badge" onclick="copyCode(this,\''+escapeJS(sc)+'\')" data-code="'+escapeJS(sc)+'">••••</span></td>'+(isAdmin?'<td style="text-align:center;"><i class="fa-solid fa-pen" onclick="editItem(\''+escapeJS(si)+'\')" style="color:var(--primary);cursor:pointer;margin-left:12px;font-size:16px;" title="עריכה"></i><i class="fa-solid fa-trash" onclick="confirmDelete(\''+escapeJS(si)+'\',\''+escapeJS(sa)+'\')" style="color:var(--danger);cursor:pointer;font-size:16px;" title="מחיקה"></i></td>':'')+'</tr>'}).join('')}var ps=document.getElementById('pendingSection'),pl=document.getElementById('pendingList');if(isAdmin&&pending.length>0){ps.style.display='block';pl.innerHTML=pending.map(function(item){var id=item[0],p=item[1];return'<div class="pending-item"><span class="info">'+sanitizeHTML(p.address)+' | 🔑 '+sanitizeHTML(p.code)+'</span><div class="actions"><button onclick="approvePending(\''+escapeJS(id)+'\')" class="btn-success" style="padding:4px 12px;font-size:11px;margin:0;">✅ אשר</button><button onclick="db.ref(\'pending_houses/'+escapeJS(id)+'\').remove()" class="btn-primary" style="background:var(--danger);padding:4px 12px;font-size:11px;margin:0;">🗑️ מחק</button></div></div>'}).join('')}else{ps.style.display='none'}}
 
