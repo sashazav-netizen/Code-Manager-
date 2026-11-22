@@ -242,7 +242,15 @@ function checkRateLimit(){var key='global',now=Date.now();if(!loginAttempts[key]
 // ============================================================
 // FIREBASE CONFIG + AUTH
 // ============================================================
-var firebaseConfig={apiKey:"AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",authDomain:"code-manager-314c2.firebaseapp.com",databaseURL:"https://code-manager-314c2-default-rtdb.europe-west1.firebasedatabase.app",projectId:"code-manager-314c2",storageBucket:"code-manager-314c2.firebasestorage.app",messagingSenderId:"673454437709",appId:"1:673454437709:web:690e62bb83290a086b3304"};
+var firebaseConfig={
+  apiKey: "AIzaSyD7NWiZ5REFcaAfPHLFDGvKr3_lh3eJ1vg",
+  authDomain: "code-manager-test.firebaseapp.com",
+  projectId: "code-manager-test",
+  storageBucket: "code-manager-test.firebasestorage.app",
+  messagingSenderId: "134331051490",
+  appId: "1:134331051490:web:17834396e50e2ae3a99dbb",
+  measurementId: "G-F7RWT18HV5"
+};
 firebase.initializeApp(firebaseConfig);
 var db=firebase.database();
 var auth=firebase.auth();
@@ -305,11 +313,13 @@ function updateSessionDisplay(){
 // ============================================================
 function logActivity(action,details){
     if(!isAdmin)return;
-    db.ref('activity_logs_people').push({action:action,details:details,timestamp:new Date().toISOString(),user:currentUser?currentUser.email:'admin'});
+    if(!db)return;
+    db.ref('activity_logs_people').push({action:action,details:details,timestamp:new Date().toISOString(),user:currentUser?currentUser.email:'admin'}).catch(function(){});
 }
 
 function showActivityLog(){
     if(!isAdmin){toast('🔒 רק מנהל יכול לצפות ביומן','#ef4444');return}
+    if(!db){toast('❌ אין חיבור למסד נתונים','#ef4444');return}
     db.ref('activity_logs_people').limitToLast(50).once('value',function(snap){
         var logs=snap.val()?Object.values(snap.val()).reverse():[];
         if(logs.length===0){
@@ -344,14 +354,19 @@ function toggleDashboard(){
 
 function updateDashboard(){
     if(!isAdmin)return;
+    if(!db)return;
     db.ref('house_codes').once('value',function(snap){
         var codes=snap.val()?Object.values(snap.val()):[];
-        document.getElementById('totalCodes').textContent=codes.length;
+        var el=document.getElementById('totalCodes');
+        if(el)el.textContent=codes.length;
         codesData=codes;
-    });
-    document.getElementById('totalPeople').textContent=data.length;
-    document.getElementById('pendingCount').textContent=pending.length;
-    document.getElementById('weeklyAdditions').textContent=0;
+    }).catch(function(){});
+    var el2=document.getElementById('totalPeople');
+    if(el2)el2.textContent=data.length;
+    var el3=document.getElementById('pendingCount');
+    if(el3)el3.textContent=pending.length;
+    var el4=document.getElementById('weeklyAdditions');
+    if(el4)el4.textContent=0;
 }
 
 // ============================================================
@@ -408,11 +423,12 @@ function exportFullBackup(){
 // ============================================================
 function clearAllPending(){
     if(!isAdmin){toast('🔒 רק מנהל','#ef4444');return}
+    if(!db){toast('❌ אין חיבור למסד נתונים','#ef4444');return}
     if(pending.length===0){toast('אין ממתינים לנקות','#facc15');return}
     showModal('<h3>🧹 ניקוי ממתינים</h3><p>האם למחוק את כל <strong>'+pending.length+'</strong> הרשומות הממתינות?</p><p style="font-size:13px;color:var(--danger);">⚠️ פעולה זו אינה ניתנת לביטול</p>','<button onclick="confirmClearPending()" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק הכל</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>');
 }
 function confirmClearPending(){
-    pending.forEach(function(item){db.ref('pending/'+item[0]).remove()});
+    pending.forEach(function(item){if(db)db.ref('pending/'+item[0]).remove()});
     closeModal();
     toast('🧹 נמחקו כל הממתינים');
     logActivity('ניקוי ממתינים','נמחקו '+pending.length+' רשומות');
@@ -444,9 +460,11 @@ auth.onAuthStateChanged(function(user){
     }
 });
 
-// Real-time listeners
-db.ref('codes').on('value',function(s){data=s.val()?Object.values(s.val()):[];render();if(isAdmin)updateDashboard()});
-db.ref('pending').on('value',function(s){pending=s.val()?Object.entries(s.val()):[];render();if(isAdmin)updateDashboard()});
+// Real-time listeners (מוגנים למקרה שאין DB)
+if(db){
+    db.ref('codes').on('value',function(s){data=s.val()?Object.values(s.val()):[];render();if(isAdmin)updateDashboard()},function(err){console.log("DB Error:",err)});
+    db.ref('pending').on('value',function(s){pending=s.val()?Object.entries(s.val()):[];render();if(isAdmin)updateDashboard()},function(err){console.log("DB Error:",err)});
+}
 
 // ============================================================
 // AUTHENTICATION
@@ -529,20 +547,20 @@ function render(){var t=(document.getElementById('searchInput')?document.getElem
 
 async function handleIdClick(el,id){var item=data.find(function(d){return d.id===id});if(!item)return;if(el.textContent!=='••••••'){el.textContent='••••••';return}el.textContent=item.idnum||'—';el.classList.add('copied');try{await navigator.clipboard.writeText(item.idnum||'');toast('📋 ת"ז הועתקה!')}catch(e){}setTimeout(function(){if(el.textContent!=='••••••'){el.textContent='••••••';el.classList.remove('copied')}},4000)}
 
-function addToCloud(){var btn=document.getElementById('submitBtn'),fields=['f_firstname','f_lastname','f_id','f_address','f_city'],vals=fields.map(function(id){return document.getElementById(id).value.trim()});if(vals.some(function(v){return !v}))return toast('❌ מלא את כל השדות','#ef4444');if(!/^\d{9}$/.test(vals[2]))return toast('🆔 ת"ז חייבת להיות 9 ספרות בדיוק','#ef4444');if(data.find(function(d){return d.idnum===vals[2]})||pending.find(function(item){return item[1].idnum===vals[2]}))return toast('🚫 ת"ז כבר קיימת במערכת','#ef4444');btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> שולח...';db.ref('pending').push({firstname:vals[0],lastname:vals[1],idnum:vals[2],address:vals[3],city:vals[4],notes:document.getElementById('f_notes').value.trim()}).then(function(){['f_firstname','f_lastname','f_id','f_address','f_city','f_notes'].forEach(function(id){document.getElementById(id).value=''});toast('☁️ נשלח לאישור מנהל');if(isAdmin)logActivity('הוספת אדם',vals[0]+' '+vals[1])}).catch(function(){toast('❌ שגיאה בשליחה','#ef4444')}).finally(function(){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן'})}
+function addToCloud(){var btn=document.getElementById('submitBtn'),fields=['f_firstname','f_lastname','f_id','f_address','f_city'],vals=fields.map(function(id){return document.getElementById(id).value.trim()});if(vals.some(function(v){return !v}))return toast('❌ מלא את כל השדות','#ef4444');if(!/^\d{9}$/.test(vals[2]))return toast('🆔 ת"ז חייבת להיות 9 ספרות בדיוק','#ef4444');if(data.find(function(d){return d.idnum===vals[2]})||pending.find(function(item){return item[1].idnum===vals[2]}))return toast('🚫 ת"ז כבר קיימת במערכת','#ef4444');if(!db){return toast('❌ אין חיבור למסד נתונים','#ef4444')}btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> שולח...';db.ref('pending').push({firstname:vals[0],lastname:vals[1],idnum:vals[2],address:vals[3],city:vals[4],notes:document.getElementById('f_notes').value.trim()}).then(function(){['f_firstname','f_lastname','f_id','f_address','f_city','f_notes'].forEach(function(id){document.getElementById(id).value=''});toast('☁️ נשלח לאישור מנהל');if(isAdmin)logActivity('הוספת אדם',vals[0]+' '+vals[1])}).catch(function(){toast('❌ שגיאה בשליחה','#ef4444')}).finally(function(){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן'})}
 
-function approvePending(id){var pair=pending.find(function(item){return item[0]===id});if(!pair)return;var p=pair[1],newId=Date.now().toString();db.ref('codes/'+newId).set({id:newId,firstname:p.firstname,lastname:p.lastname,idnum:p.idnum,address:p.address,city:p.city,notes:p.notes||''}).then(function(){db.ref('pending/'+id).remove();toast('✅ אושר בהצלחה!');if(isAdmin)logActivity('אישור אדם',p.firstname+' '+p.lastname)}).catch(function(){toast('❌ שגיאה באישור','#ef4444')})}
-function rejectPending(id){db.ref('pending/'+id).remove();toast('🗑️ נמחק')}
+function approvePending(id){var pair=pending.find(function(item){return item[0]===id});if(!pair)return;var p=pair[1],newId=Date.now().toString();if(!db)return;db.ref('codes/'+newId).set({id:newId,firstname:p.firstname,lastname:p.lastname,idnum:p.idnum,address:p.address,city:p.city,notes:p.notes||''}).then(function(){db.ref('pending/'+id).remove();toast('✅ אושר בהצלחה!');if(isAdmin)logActivity('אישור אדם',p.firstname+' '+p.lastname)}).catch(function(){toast('❌ שגיאה באישור','#ef4444')})}
+function rejectPending(id){if(!db)return;db.ref('pending/'+id).remove();toast('🗑️ נמחק')}
 
 function editItem(id){var d=data.find(function(x){return x.id===id});if(!d)return toast('❌ רשומה לא נמצאה','#ef4444');showModal('<h3>✏️ עריכת רשומה</h3><div class="form-row"><input id="eFirst" value="'+sanitizeHTML(d.firstname)+'" placeholder="שם פרטי" maxlength="50"><input id="eLast" value="'+sanitizeHTML(d.lastname)+'" placeholder="שם משפחה" maxlength="50"></div><div class="form-row"><input id="eId" value="'+sanitizeHTML(d.idnum)+'" placeholder="תעודת זהות" maxlength="9" inputmode="numeric"><input id="eCity" value="'+sanitizeHTML(d.city)+'" placeholder="עיר" maxlength="50"></div><input id="eAddress" value="'+sanitizeHTML(d.address)+'" placeholder="כתובת מלאה" maxlength="200"><textarea id="eNotes" placeholder="הערות">'+sanitizeHTML(d.notes||'')+'</textarea>','<button onclick="saveEdit(\''+escapeJS(id)+'\')" class="btn-success" style="width:100%;">💾 שמור</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
-function saveEdit(id){var vals=['eFirst','eLast','eId','eAddress','eCity'].map(function(id){return document.getElementById(id).value.trim()});if(vals.some(function(v){return !v}))return toast('❌ מלא את כל השדות','#ef4444');if(!/^\d{9}$/.test(vals[2]))return toast('🆔 ת"ז חייבת להיות 9 ספרות','#ef4444');db.ref('codes/'+id).update({firstname:vals[0],lastname:vals[1],idnum:vals[2],address:vals[3],city:vals[4],notes:document.getElementById('eNotes').value.trim()}).then(function(){closeModal();toast('✅ עודכן!');if(isAdmin)logActivity('עריכת אדם',vals[0]+' '+vals[1])}).catch(function(){toast('❌ שגיאה בעדכון','#ef4444')})}
+function saveEdit(id){var vals=['eFirst','eLast','eId','eAddress','eCity'].map(function(id){return document.getElementById(id).value.trim()});if(vals.some(function(v){return !v}))return toast('❌ מלא את כל השדות','#ef4444');if(!/^\d{9}$/.test(vals[2]))return toast('🆔 ת"ז חייבת להיות 9 ספרות','#ef4444');if(!db)return;db.ref('codes/'+id).update({firstname:vals[0],lastname:vals[1],idnum:vals[2],address:vals[3],city:vals[4],notes:document.getElementById('eNotes').value.trim()}).then(function(){closeModal();toast('✅ עודכן!');if(isAdmin)logActivity('עריכת אדם',vals[0]+' '+vals[1])}).catch(function(){toast('❌ שגיאה בעדכון','#ef4444')})}
 
 function confirmDelete(id,name){showModal('<h3>🗑️ מחיקה</h3><p>האם למחוק את <strong>'+sanitizeHTML(name)+'</strong>?</p><p style="font-size:13px;color:var(--text-muted);">פעולה זו אינה ניתנת לביטול</p>','<button onclick="deleteItem(\''+escapeJS(id)+'\')" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
-function deleteItem(id){db.ref('codes/'+id).remove().then(function(){closeModal();toast('🗑️ נמחק!');if(isAdmin)logActivity('מחיקת אדם',id)}).catch(function(){toast('❌ שגיאה במחיקה','#ef4444')})}
+function deleteItem(id){if(!db)return;db.ref('codes/'+id).remove().then(function(){closeModal();toast('🗑️ נמחק!');if(isAdmin)logActivity('מחיקת אדם',id)}).catch(function(){toast('❌ שגיאה במחיקה','#ef4444')})}
 
 function exportJSON(){var a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));a.download='people_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('📥 יוצא JSON')}
 function exportCSV(){var h=['שם פרטי','שם משפחה','תעודת זהות','כתובת','עיר','הערות'];var r=data.map(function(i){return[i.firstname||'',i.lastname||'',i.idnum||'',i.address||'',i.city||'',i.notes||''].map(function(v){return'"'+v.replace(/"/g,'""')+'"'}).join(',')});var csv='\ufeff'+h.join(',')+'\n'+r.join('\n');var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='people_backup_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('📥 יוצא CSV')}
-function importToCloud(e){var reader=new FileReader();reader.onload=function(ev){try{var imported=JSON.parse(ev.target.result);if(!Array.isArray(imported))throw new Error('Invalid format');var count=0;imported.forEach(function(i){if(i.firstname&&i.lastname&&i.idnum){var id=Date.now()+Math.random().toString(36).slice(2,6);db.ref('codes/'+id).set({id:id,firstname:i.firstname,lastname:i.lastname,idnum:i.idnum,address:i.address||'',city:i.city||'',notes:i.notes||''});count++}});toast('✅ שוחזרו '+count+' רשומות');e.target.value=''}catch(err){toast('❌ קובץ לא תקין','#ef4444')}};if(e.target.files[0])reader.readAsText(e.target.files[0])}
+function importToCloud(e){var reader=new FileReader();reader.onload=function(ev){try{var imported=JSON.parse(ev.target.result);if(!Array.isArray(imported))throw new Error('Invalid format');var count=0;imported.forEach(function(i){if(i.firstname&&i.lastname&&i.idnum){var id=Date.now()+Math.random().toString(36).slice(2,6);if(db)db.ref('codes/'+id).set({id:id,firstname:i.firstname,lastname:i.lastname,idnum:i.idnum,address:i.address||'',city:i.city||'',notes:i.notes||''});count++}});toast('✅ שוחזרו '+count+' רשומות');e.target.value=''}catch(err){toast('❌ קובץ לא תקין','#ef4444')}};if(e.target.files[0])reader.readAsText(e.target.files[0])}
 
 function changePage(dir){var total=data.filter(function(d){var t=(document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase();return(d.firstname||'').toLowerCase().includes(t)||(d.lastname||'').toLowerCase().includes(t)||(d.address||'').toLowerCase().includes(t)||(d.city||'').toLowerCase().includes(t)}).length;var totalPages=Math.ceil(total/itemsPerPage)||1;currentPage=Math.max(1,Math.min(currentPage+dir,totalPages));render();window.scrollTo({top:0,behavior:'smooth'})}
 function goToFirstPage(){currentPage=1;render();window.scrollTo({top:0,behavior:'smooth'})}
