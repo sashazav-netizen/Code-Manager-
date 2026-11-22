@@ -464,8 +464,14 @@ function loginAdmin(){
     .catch(function(error){
         var msg = '❌ שגיאה בהתחברות';
         if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') msg = '❌ אימייל או סיסמה שגויים';
-        if (error.code === 'auth/invalid-email') msg = '❌ אימייל לא תקין';
+        else if (error.code === 'auth/invalid-email') msg = '❌ אימייל לא תקין';
+        else if (error.code === 'auth/invalid-credential') msg = '❌ אימייל או סיסמה שגויים';
+        else if (error.code === 'auth/network-request-failed') msg = '❌ בעיית רשת - בדוק חיבור';
+        else if (error.code === 'auth/too-many-requests') msg = '⏳ יותר מדי ניסיונות. המתן';
+        else msg = '❌ שגיאה: ' + error.code;
+        
         toast(msg, '#ef4444');
+        console.error("Auth Error:", error);
     });
 }
 
