@@ -237,11 +237,11 @@ function checkRateLimit(){var key='global',now=Date.now();if(!loginAttempts[key]
 var firebaseConfig={
   apiKey: "AIzaSyD7NWiZ5REFcaAfPHLFDGvKr3_lh3eJ1vg",
   authDomain: "code-manager-test.firebaseapp.com",
+  databaseURL: "https://code-manager-test-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "code-manager-test",
   storageBucket: "code-manager-test.firebasestorage.app",
   messagingSenderId: "134331051490",
-  appId: "1:134331051490:web:17834396e50e2ae3a99dbb",
-  measurementId: "G-F7RWT18HV5"
+  appId: "1:134331051490:web:17834396e50e2ae3a99dbb"
 };
 firebase.initializeApp(firebaseConfig);
 var db=firebase.database();
@@ -305,7 +305,7 @@ function updateSessionDisplay(){
 // ============================================================
 function logActivity(action,details){
     if(!isAdmin)return;
-    if(!db)return; // הגנה למקרה שאין DB
+    if(!db)return;
     db.ref('activity_logs').push({action:action,details:details,timestamp:new Date().toISOString(),user:currentUser?currentUser.email:'admin'}).catch(function(){});
 }
 
