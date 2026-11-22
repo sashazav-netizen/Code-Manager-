@@ -6,6 +6,7 @@
 <title>People Manager - v3.0</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -103,8 +104,6 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);mar
 .gap-8{gap:8px}
 .mt-8{margin-top:8px}
 .text-center{text-align:center}
-
-/* Dashboard */
 .dashboard{display:none;margin-bottom:15px}
 .dashboard.visible{display:block}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
@@ -116,15 +115,12 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);mar
 .stat-card.pending i{color:var(--warning)}
 .stat-card.codes i{color:#a78bfa}
 .stat-card.weekly i{color:#34d399}
-
 .session-timer{font-size:12px;color:var(--text-muted);padding:4px 12px;background:rgba(255,255,255,.05);border-radius:20px;display:inline-flex;align-items:center;gap:6px}
 .session-timer.warning{color:var(--warning)}
 .session-timer.danger{color:var(--danger);animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-
 .admin-actions{display:flex;gap:8px;flex-wrap:wrap}
 .admin-actions button{flex:1;min-width:100px;padding:8px 14px;font-size:12px}
-
 @media(max-width:768px){.container{padding:10px}.glass{padding:14px 16px}h1{font-size:18px;padding:15px;gap:10px}.header-logo{height:30px}td,th{padding:10px 8px;font-size:12px}.version-badge{font-size:10px;padding:3px 10px}.btn-nav-back{min-width:140px;font-size:13px;padding:8px 16px}#toast{font-size:13px;padding:10px 20px;bottom:70px;white-space:normal}.modal-box{max-width:95%}.pending-item{flex-direction:column;align-items:stretch}.pending-item .actions{justify-content:flex-end}.version-list-item{flex-direction:column;align-items:stretch}.version-actions{justify-content:flex-end}.form-row{flex-direction:column}.form-row>*{min-width:unset}.toolbar{flex-direction:column;align-items:stretch}.btn-danger{align-self:flex-start}.stats-grid{grid-template-columns:repeat(2,1fr)}.admin-actions{flex-direction:column}.admin-actions button{min-width:unset}}
 @media(max-width:480px){.pagination-bar{gap:4px;padding:10px}.btn-page{width:34px;height:34px;font-size:12px}.page-indicator{font-size:11px;min-width:80px;padding:4px 12px}table{font-size:12px;min-width:500px}td,th{padding:8px 6px}.stats-grid{grid-template-columns:1fr}}
 </style>
@@ -137,7 +133,8 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);mar
 <div class="container">
 <div id="loginBox" class="glass text-center">
 <h3 style="margin:0 0 16px 0;font-size:20px;">🔐 כניסה למערכת ענן</h3>
-<input id="password" type="password" placeholder="סיסמת מנהל" onkeydown="if(event.key==='Enter') loginAdmin()">
+<input id="loginEmail" type="email" placeholder="אימייל" onkeydown="if(event.key==='Enter') loginAdmin()">
+<input id="loginPassword" type="password" placeholder="סיסמה" onkeydown="if(event.key==='Enter') loginAdmin()">
 <button onclick="loginAdmin()" class="btn-primary mt-8"><i class="fa-solid fa-user-shield"></i> כניסה כמנהל</button>
 <button onclick="loginGuest()" class="btn-ghost mt-8"><i class="fa-solid fa-eye"></i> כניסה כאורח</button>
 <div style="font-size:12px;color:var(--text-muted);margin-top:12px;"><i class="fa-solid fa-info-circle"></i> אורח: צפייה בלבד</div>
@@ -155,8 +152,6 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);mar
 <button onclick="logout()" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> יציאה</button>
 </div>
 </div>
-
-<!-- Dashboard -->
 <div class="dashboard" id="dashboard">
 <div class="glass">
 <h4 style="margin:0 0 15px 0;font-size:16px;"><i class="fa-solid fa-chart-simple"></i> 📊 סטטיסטיקות מערכת</h4>
@@ -167,7 +162,6 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);mar
 <div class="stat-card weekly"><i class="fa-solid fa-calendar-week"></i><span class="number" id="weeklyAdditions">0</span><span class="label">📅 נוספו השבוע</span></div>
 </div>
 </div>
-<!-- Admin Actions -->
 <div class="glass admin-only" id="adminActions" style="display:none;">
 <h4 style="margin:0 0 12px 0;font-size:15px;"><i class="fa-solid fa-user-gear"></i> ⚙️ פעולות מנהל</h4>
 <div class="admin-actions">
@@ -178,7 +172,6 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--text-muted);mar
 </div>
 </div>
 </div>
-
 <div id="backupZone" class="glass admin-only" style="display:none;gap:10px;justify-content:center;flex-wrap:wrap;">
 <button onclick="exportCSV()" class="btn-backup"><i class="fa-solid fa-file-excel"></i> אקסל</button>
 <button onclick="exportJSON()" class="btn-backup"><i class="fa-solid fa-file-code"></i> גיבוי</button>
@@ -247,18 +240,19 @@ var loginAttempts={};
 function checkRateLimit(){var key='global',now=Date.now();if(!loginAttempts[key])loginAttempts[key]=[];loginAttempts[key]=loginAttempts[key].filter(function(t){return now-t<60000});if(loginAttempts[key].length>=5){toast('⚠️ יותר מדי ניסיונות. חכה דקה.','#ef4444');return false}loginAttempts[key].push(now);return true}
 
 // ============================================================
-// FIREBASE CONFIG
+// FIREBASE CONFIG + AUTH
 // ============================================================
 var firebaseConfig={apiKey:"AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",authDomain:"code-manager-314c2.firebaseapp.com",databaseURL:"https://code-manager-314c2-default-rtdb.europe-west1.firebasedatabase.app",projectId:"code-manager-314c2",storageBucket:"code-manager-314c2.firebasestorage.app",messagingSenderId:"673454437709",appId:"1:673454437709:web:690e62bb83290a086b3304"};
 firebase.initializeApp(firebaseConfig);
 var db=firebase.database();
+var auth=firebase.auth();
 
 // ============================================================
 // APPLICATION STATE
 // ============================================================
-var data=[],pending=[],isAdmin=sessionStorage.getItem("isAdmin")==="true",currentPage=1,itemsPerPage=10,toastTimer=null,totalPagesCount=1;
+var data=[],pending=[],isAdmin=false,currentPage=1,itemsPerPage=10,toastTimer=null,totalPagesCount=1;
 var codesData=[];
-var ADMIN_HASH="e1045583d773c03b76cab17c591d36b1d932e8b74bd0e83190dacd597826ba19";
+var currentUser=null;
 
 // ============================================================
 // SESSION TIMEOUT
@@ -311,7 +305,7 @@ function updateSessionDisplay(){
 // ============================================================
 function logActivity(action,details){
     if(!isAdmin)return;
-    db.ref('activity_logs_people').push({action:action,details:details,timestamp:new Date().toISOString(),user:'admin'});
+    db.ref('activity_logs_people').push({action:action,details:details,timestamp:new Date().toISOString(),user:currentUser?currentUser.email:'admin'});
 }
 
 function showActivityLog(){
@@ -425,58 +419,82 @@ function confirmClearPending(){
 }
 
 // ============================================================
-// HASH FUNCTION
-// ============================================================
-async function hashPass(s){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(b){return b.toString(16).padStart(2,'0')}).join('')}
-
-// ============================================================
 // INITIALIZATION
 // ============================================================
 loadVersionHistory();updateVersionDisplay();
 
 window.onload=function(){
-    if(isAdmin)showApp();
     showModal('<h3>📋 הצהרת פרטיות</h3><p style="font-size:14px;line-height:1.8;">השימוש במידע לצורכי עבודה בלבד.<br>הנתונים מאובטחים ומוגנים.<br><br><span style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> המערכת עומדת בתקני אבטחה</span></p>','<button onclick="confirmEntry()" class="btn-success" style="width:100%;">✅ אישור - כניסה</button><button onclick="rejectEntry()" class="btn-primary" style="width:100%;background:var(--danger);">🚫 ביטול</button>')
 };
 function confirmEntry(){closeModal();document.getElementById('mainContent').style.display='flex';toast('👋 שלום! ברוך הבא')}
 function rejectEntry(){window.location.href='https://www.google.com'}
 
+// Firebase Auth state listener
+auth.onAuthStateChanged(function(user){
+    currentUser = user;
+    if(user){
+        isAdmin = true;
+        showApp();
+        resetSessionTimer();
+        logActivity('התחברות','מנהל התחבר למערכת');
+    } else {
+        isAdmin = false;
+        document.getElementById('app').style.display='none';
+        document.getElementById('loginBox').style.display='block';
+    }
+});
+
+// Real-time listeners
 db.ref('codes').on('value',function(s){data=s.val()?Object.values(s.val()):[];render();if(isAdmin)updateDashboard()});
 db.ref('pending').on('value',function(s){pending=s.val()?Object.entries(s.val()):[];render();if(isAdmin)updateDashboard()});
 
 // ============================================================
 // AUTHENTICATION
 // ============================================================
-async function loginAdmin(){
+function loginAdmin(){
     if(!checkRateLimit())return;
-    var i=document.getElementById('password').value;
-    if(!i)return toast('🔑 הכנס סיסמה','#ef4444');
-    var ih=await hashPass(i);
-    if(ih===ADMIN_HASH){
-        isAdmin=true;
-        sessionStorage.setItem('isAdmin','true');
-        showApp();
+    var email = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    if(!email || !password) return toast('🔑 הכנס אימייל וסיסמה','#ef4444');
+    
+    auth.signInWithEmailAndPassword(email, password)
+    .then(function(userCredential){
         toast('👑 מנהל מחובר');
-        logActivity('התחברות','מנהל התחבר למערכת');
-        resetSessionTimer();
-    }else{
-        toast('❌ סיסמה שגויה','#ef4444');
-        logActivity('ניסיון כניסה כושל','סיסמה שגויה');
-    }
+    })
+    .catch(function(error){
+        var msg = '❌ שגיאה בהתחברות';
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') msg = '❌ אימייל או סיסמה שגויים';
+        if (error.code === 'auth/invalid-email') msg = '❌ אימייל לא תקין';
+        toast(msg, '#ef4444');
+    });
 }
-function loginGuest(){isAdmin=false;showApp();toast('👁️ כניסת אורח - צפייה בלבד')}
-function logout(){
-    if(isAdmin)logActivity('התנתקות','מנהל התנתק מהמערכת');
-    clearInterval(sessionInterval);
-    clearTimeout(sessionTimer);
-    isAdmin=false;
-    sessionStorage.removeItem('isAdmin');
-    document.getElementById('app').style.display='none';
-    document.getElementById('loginBox').style.display='block';
+
+function loginGuest(){
+    isAdmin = false;
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('app').style.display='block';
     document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='none'});
-    document.getElementById('dashboard').classList.remove('visible');
-    toast('👋 התנתקת');
+    document.getElementById('adminActions').style.display='none';
+    document.getElementById('sessionTimer').style.display='none';
+    toast('👁️ כניסת אורח - צפייה בלבד');
+    render();
 }
+
+function logout(){
+    auth.signOut().then(function(){
+        clearInterval(sessionInterval);
+        clearTimeout(sessionTimer);
+        isAdmin = false;
+        document.getElementById('app').style.display='none';
+        document.getElementById('loginBox').style.display='block';
+        document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='none'});
+        document.getElementById('dashboard').classList.remove('visible');
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
+        toast('👋 התנתקת');
+    });
+}
+
 function showApp(){
     document.getElementById('loginBox').style.display='none';
     document.getElementById('app').style.display='block';
@@ -490,7 +508,6 @@ function showApp(){
     if(isAdmin){
         document.getElementById('adminActions').style.display='block';
         document.getElementById('sessionTimer').style.display='inline-flex';
-        resetSessionTimer();
         updateDashboard();
     }else{
         document.getElementById('adminActions').style.display='none';
@@ -504,58 +521,31 @@ function showApp(){
 // ============================================================
 function render(){var t=(document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase().trim();var f=data.filter(function(d){return(d.firstname||'').toLowerCase().includes(t)||(d.lastname||'').toLowerCase().includes(t)||(d.address||'').toLowerCase().includes(t)||(d.city||'').toLowerCase().includes(t)});f.sort(function(a,b){var f=(a.firstname||'').localeCompare(b.firstname||'','he');if(f!==0)return f;return(a.lastname||'').localeCompare(b.lastname||'','he')});var total=f.length;totalPagesCount=Math.ceil(total/itemsPerPage)||1;if(currentPage>totalPagesCount)currentPage=totalPagesCount;var pageItems=f.slice((currentPage-1)*itemsPerPage,currentPage*itemsPerPage);document.getElementById('stats').textContent='📊 רשומות: '+total;document.getElementById('resultCount').textContent=total;document.getElementById('pageIndicator').textContent='עמוד '+currentPage+' מתוך '+totalPagesCount;document.getElementById('firstPage').disabled=currentPage===1;document.getElementById('prevPage').disabled=currentPage===1;document.getElementById('nextPage').disabled=currentPage===totalPagesCount;document.getElementById('lastPage').disabled=currentPage===totalPagesCount;var tb=document.getElementById('table');if(total===0){tb.innerHTML='<tr><td colspan="'+(isAdmin?7:6)+'" class="empty-state"><i class="fa-solid fa-users"></i><div>אין רשומות</div><div style="font-size:13px;color:var(--text-muted);">הוסף איש חדש למעלה</div></td></tr>';document.querySelector('.pagination-bar').style.display='none'}else{document.querySelector('.pagination-bar').style.display='flex';tb.innerHTML=pageItems.map(function(d){var sf=sanitizeHTML(d.firstname),sl=sanitizeHTML(d.lastname),si=sanitizeHTML(d.idnum),sa=sanitizeHTML(d.address),sc=sanitizeHTML(d.city),sn=sanitizeHTML(d.notes),su=sanitizeHTML(d.id);return'<tr><td>'+(sf||'—')+'</td><td>'+(sl||'—')+'</td><td style="text-align:center;"><span class="code-badge" onclick="handleIdClick(this,\''+escapeJS(su)+'\')" data-id="'+escapeJS(su)+'">••••••</span></td><td>'+(sa||'—')+'</td><td>'+(sc||'—')+'</td><td title="'+(sn||'')+'">'+(sn||'—')+'</td>'+(isAdmin?'<td style="text-align:center;"><i class="fa-solid fa-pen" onclick="editItem(\''+escapeJS(su)+'\')" style="color:var(--primary);cursor:pointer;margin-left:10px;font-size:16px;" title="עריכה"></i><i class="fa-solid fa-trash" onclick="confirmDelete(\''+escapeJS(su)+'\',\''+escapeJS(sf)+' '+escapeJS(sl)+'\')" style="color:var(--danger);cursor:pointer;font-size:16px;" title="מחיקה"></i></td>':'')+'</tr>'}).join('')}var ps=document.getElementById('pendingSection'),pl=document.getElementById('pendingList');if(isAdmin&&pending.length>0){ps.style.display='block';pl.innerHTML=pending.map(function(item){var id=item[0],p=item[1];return'<div class="pending-item"><span class="info">'+sanitizeHTML(p.firstname)+' '+sanitizeHTML(p.lastname)+' | 🏙️ '+sanitizeHTML(p.city)+'</span><div class="actions"><button onclick="approvePending(\''+escapeJS(id)+'\')" class="btn-success" style="padding:4px 12px;font-size:11px;margin:0;">✅ אשר</button><button onclick="rejectPending(\''+escapeJS(id)+'\')" class="btn-primary" style="background:var(--danger);padding:4px 12px;font-size:11px;margin:0;">🗑️ מחק</button></div></div>'}).join('')}else{ps.style.display='none'}}
 
-// ============================================================
-// ID CLICK
-// ============================================================
 async function handleIdClick(el,id){var item=data.find(function(d){return d.id===id});if(!item)return;if(el.textContent!=='••••••'){el.textContent='••••••';return}el.textContent=item.idnum||'—';el.classList.add('copied');try{await navigator.clipboard.writeText(item.idnum||'');toast('📋 ת"ז הועתקה!')}catch(e){}setTimeout(function(){if(el.textContent!=='••••••'){el.textContent='••••••';el.classList.remove('copied')}},4000)}
 
-// ============================================================
-// ADD TO CLOUD
-// ============================================================
 function addToCloud(){var btn=document.getElementById('submitBtn'),fields=['f_firstname','f_lastname','f_id','f_address','f_city'],vals=fields.map(function(id){return document.getElementById(id).value.trim()});if(vals.some(function(v){return !v}))return toast('❌ מלא את כל השדות','#ef4444');if(!/^\d{9}$/.test(vals[2]))return toast('🆔 ת"ז חייבת להיות 9 ספרות בדיוק','#ef4444');if(data.find(function(d){return d.idnum===vals[2]})||pending.find(function(item){return item[1].idnum===vals[2]}))return toast('🚫 ת"ז כבר קיימת במערכת','#ef4444');btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> שולח...';db.ref('pending').push({firstname:vals[0],lastname:vals[1],idnum:vals[2],address:vals[3],city:vals[4],notes:document.getElementById('f_notes').value.trim()}).then(function(){['f_firstname','f_lastname','f_id','f_address','f_city','f_notes'].forEach(function(id){document.getElementById(id).value=''});toast('☁️ נשלח לאישור מנהל');if(isAdmin)logActivity('הוספת אדם',vals[0]+' '+vals[1])}).catch(function(){toast('❌ שגיאה בשליחה','#ef4444')}).finally(function(){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן'})}
 
-// ============================================================
-// APPROVE PENDING
-// ============================================================
 function approvePending(id){var pair=pending.find(function(item){return item[0]===id});if(!pair)return;var p=pair[1],newId=Date.now().toString();db.ref('codes/'+newId).set({id:newId,firstname:p.firstname,lastname:p.lastname,idnum:p.idnum,address:p.address,city:p.city,notes:p.notes||''}).then(function(){db.ref('pending/'+id).remove();toast('✅ אושר בהצלחה!');if(isAdmin)logActivity('אישור אדם',p.firstname+' '+p.lastname)}).catch(function(){toast('❌ שגיאה באישור','#ef4444')})}
 function rejectPending(id){db.ref('pending/'+id).remove();toast('🗑️ נמחק')}
 
-// ============================================================
-// EDIT ITEM
-// ============================================================
 function editItem(id){var d=data.find(function(x){return x.id===id});if(!d)return toast('❌ רשומה לא נמצאה','#ef4444');showModal('<h3>✏️ עריכת רשומה</h3><div class="form-row"><input id="eFirst" value="'+sanitizeHTML(d.firstname)+'" placeholder="שם פרטי" maxlength="50"><input id="eLast" value="'+sanitizeHTML(d.lastname)+'" placeholder="שם משפחה" maxlength="50"></div><div class="form-row"><input id="eId" value="'+sanitizeHTML(d.idnum)+'" placeholder="תעודת זהות" maxlength="9" inputmode="numeric"><input id="eCity" value="'+sanitizeHTML(d.city)+'" placeholder="עיר" maxlength="50"></div><input id="eAddress" value="'+sanitizeHTML(d.address)+'" placeholder="כתובת מלאה" maxlength="200"><textarea id="eNotes" placeholder="הערות">'+sanitizeHTML(d.notes||'')+'</textarea>','<button onclick="saveEdit(\''+escapeJS(id)+'\')" class="btn-success" style="width:100%;">💾 שמור</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
 function saveEdit(id){var vals=['eFirst','eLast','eId','eAddress','eCity'].map(function(id){return document.getElementById(id).value.trim()});if(vals.some(function(v){return !v}))return toast('❌ מלא את כל השדות','#ef4444');if(!/^\d{9}$/.test(vals[2]))return toast('🆔 ת"ז חייבת להיות 9 ספרות','#ef4444');db.ref('codes/'+id).update({firstname:vals[0],lastname:vals[1],idnum:vals[2],address:vals[3],city:vals[4],notes:document.getElementById('eNotes').value.trim()}).then(function(){closeModal();toast('✅ עודכן!');if(isAdmin)logActivity('עריכת אדם',vals[0]+' '+vals[1])}).catch(function(){toast('❌ שגיאה בעדכון','#ef4444')})}
 
-// ============================================================
-// DELETE ITEM
-// ============================================================
 function confirmDelete(id,name){showModal('<h3>🗑️ מחיקה</h3><p>האם למחוק את <strong>'+sanitizeHTML(name)+'</strong>?</p><p style="font-size:13px;color:var(--text-muted);">פעולה זו אינה ניתנת לביטול</p>','<button onclick="deleteItem(\''+escapeJS(id)+'\')" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
 function deleteItem(id){db.ref('codes/'+id).remove().then(function(){closeModal();toast('🗑️ נמחק!');if(isAdmin)logActivity('מחיקת אדם',id)}).catch(function(){toast('❌ שגיאה במחיקה','#ef4444')})}
 
-// ============================================================
-// EXPORT / IMPORT
-// ============================================================
 function exportJSON(){var a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));a.download='people_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('📥 יוצא JSON')}
 function exportCSV(){var h=['שם פרטי','שם משפחה','תעודת זהות','כתובת','עיר','הערות'];var r=data.map(function(i){return[i.firstname||'',i.lastname||'',i.idnum||'',i.address||'',i.city||'',i.notes||''].map(function(v){return'"'+v.replace(/"/g,'""')+'"'}).join(',')});var csv='\ufeff'+h.join(',')+'\n'+r.join('\n');var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='people_backup_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('📥 יוצא CSV')}
 function importToCloud(e){var reader=new FileReader();reader.onload=function(ev){try{var imported=JSON.parse(ev.target.result);if(!Array.isArray(imported))throw new Error('Invalid format');var count=0;imported.forEach(function(i){if(i.firstname&&i.lastname&&i.idnum){var id=Date.now()+Math.random().toString(36).slice(2,6);db.ref('codes/'+id).set({id:id,firstname:i.firstname,lastname:i.lastname,idnum:i.idnum,address:i.address||'',city:i.city||'',notes:i.notes||''});count++}});toast('✅ שוחזרו '+count+' רשומות');e.target.value=''}catch(err){toast('❌ קובץ לא תקין','#ef4444')}};if(e.target.files[0])reader.readAsText(e.target.files[0])}
 
-// ============================================================
-// PAGINATION
-// ============================================================
 function changePage(dir){var total=data.filter(function(d){var t=(document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase();return(d.firstname||'').toLowerCase().includes(t)||(d.lastname||'').toLowerCase().includes(t)||(d.address||'').toLowerCase().includes(t)||(d.city||'').toLowerCase().includes(t)}).length;var totalPages=Math.ceil(total/itemsPerPage)||1;currentPage=Math.max(1,Math.min(currentPage+dir,totalPages));render();window.scrollTo({top:0,behavior:'smooth'})}
 function goToFirstPage(){currentPage=1;render();window.scrollTo({top:0,behavior:'smooth'})}
 function goToLastPage(){currentPage=totalPagesCount;render();window.scrollTo({top:0,behavior:'smooth'})}
 
-// ============================================================
-// UI HELPERS
-// ============================================================
 function showModal(c,b){document.getElementById('modalContent').innerHTML=c;document.getElementById('modalBtns').innerHTML=b||'';document.getElementById('modal').classList.add('active');document.getElementById('modal').style.display='flex'}
 function closeModal(){document.getElementById('modal').classList.remove('active');document.getElementById('modal').style.display='none'}
 function toast(msg,color){color=color||'#22c55e';var t=document.getElementById('toast');clearTimeout(toastTimer);t.textContent=msg;t.style.background=color;t.classList.add('show');toastTimer=setTimeout(function(){t.classList.remove('show')},2800)}
 
-// ============================================================
-// KEYBOARD SHORTCUTS
-// ============================================================
 document.addEventListener('keydown',function(e){
     if(e.key==='Escape')closeModal();
     if(e.ctrlKey&&e.key==='f'){e.preventDefault();var el=document.getElementById('searchInput');if(el)el.focus()}
@@ -563,9 +553,6 @@ document.addEventListener('keydown',function(e){
     if(e.ctrlKey&&e.key==='d'&&isAdmin){e.preventDefault();toggleDashboard()}
 });
 
-// ============================================================
-// RESET SESSION ON ACTIVITY
-// ============================================================
 document.addEventListener('click',function(){if(isAdmin)resetSessionTimer()});
 document.addEventListener('keydown',function(){if(isAdmin)resetSessionTimer()});
 document.addEventListener('mousemove',function(){if(isAdmin)resetSessionTimer()});
