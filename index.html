@@ -234,7 +234,15 @@ function checkRateLimit(){var key='global',now=Date.now();if(!loginAttempts[key]
 // ============================================================
 // FIREBASE CONFIG + AUTH
 // ============================================================
-var firebaseConfig={apiKey:"AIzaSyDcJalubKZIOSBZzhWqAw3Hf1rLesz5FbQ",authDomain:"code-manager-314c2.firebaseapp.com",databaseURL:"https://code-manager-314c2-default-rtdb.europe-west1.firebasedatabase.app",projectId:"code-manager-314c2",storageBucket:"code-manager-314c2.firebasestorage.app",messagingSenderId:"673454437709",appId:"1:673454437709:web:690e62bb83290a086b3304"};
+var firebaseConfig={
+  apiKey: "AIzaSyD7NWiZ5REFcaAfPHLFDGvKr3_lh3eJ1vg",
+  authDomain: "code-manager-test.firebaseapp.com",
+  projectId: "code-manager-test",
+  storageBucket: "code-manager-test.firebasestorage.app",
+  messagingSenderId: "134331051490",
+  appId: "1:134331051490:web:17834396e50e2ae3a99dbb",
+  measurementId: "G-F7RWT18HV5"
+};
 firebase.initializeApp(firebaseConfig);
 var db=firebase.database();
 var auth=firebase.auth();
@@ -297,11 +305,13 @@ function updateSessionDisplay(){
 // ============================================================
 function logActivity(action,details){
     if(!isAdmin)return;
-    db.ref('activity_logs').push({action:action,details:details,timestamp:new Date().toISOString(),user:currentUser?currentUser.email:'admin'});
+    if(!db)return; // הגנה למקרה שאין DB
+    db.ref('activity_logs').push({action:action,details:details,timestamp:new Date().toISOString(),user:currentUser?currentUser.email:'admin'}).catch(function(){});
 }
 
 function showActivityLog(){
     if(!isAdmin){toast('🔒 רק מנהל יכול לצפות ביומן','#ef4444');return}
+    if(!db){toast('❌ אין חיבור למסד נתונים','#ef4444');return}
     db.ref('activity_logs').limitToLast(50).once('value',function(snap){
         var logs=snap.val()?Object.values(snap.val()).reverse():[];
         if(logs.length===0){
@@ -336,14 +346,19 @@ function toggleDashboard(){
 
 function updateDashboard(){
     if(!isAdmin)return;
+    if(!db)return;
     db.ref('codes').once('value',function(snap){
         var ppl=snap.val()?Object.values(snap.val()):[];
-        document.getElementById('totalPeople').textContent=ppl.length;
+        var el=document.getElementById('totalPeople');
+        if(el)el.textContent=ppl.length;
         peopleData=ppl;
-    });
-    document.getElementById('totalCodes').textContent=data.length;
-    document.getElementById('pendingCount').textContent=pending.length;
-    document.getElementById('weeklyAdditions').textContent=0;
+    }).catch(function(){});
+    var el2=document.getElementById('totalCodes');
+    if(el2)el2.textContent=data.length;
+    var el3=document.getElementById('pendingCount');
+    if(el3)el3.textContent=pending.length;
+    var el4=document.getElementById('weeklyAdditions');
+    if(el4)el4.textContent=0;
 }
 
 // ============================================================
@@ -400,11 +415,12 @@ function exportFullBackup(){
 // ============================================================
 function clearAllPending(){
     if(!isAdmin){toast('🔒 רק מנהל','#ef4444');return}
+    if(!db){toast('❌ אין חיבור למסד נתונים','#ef4444');return}
     if(pending.length===0){toast('אין ממתינים לנקות','#facc15');return}
     showModal('<h3>🧹 ניקוי ממתינים</h3><p>האם למחוק את כל <strong>'+pending.length+'</strong> הרשומות הממתינות?</p><p style="font-size:13px;color:var(--danger);">⚠️ פעולה זו אינה ניתנת לביטול</p>','<button onclick="confirmClearPending()" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק הכל</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>');
 }
 function confirmClearPending(){
-    pending.forEach(function(item){db.ref('pending_houses/'+item[0]).remove()});
+    pending.forEach(function(item){if(db)db.ref('pending_houses/'+item[0]).remove()});
     closeModal();
     toast('🧹 נמחקו כל הממתינים');
     logActivity('ניקוי ממתינים','נמחקו '+pending.length+' רשומות');
@@ -436,9 +452,11 @@ auth.onAuthStateChanged(function(user){
     }
 });
 
-// Real-time listeners
-db.ref('house_codes').on('value',function(s){data=s.val()?Object.values(s.val()):[];render();if(isAdmin)updateDashboard()});
-db.ref('pending_houses').on('value',function(s){pending=s.val()?Object.entries(s.val()):[];render();if(isAdmin)updateDashboard()});
+// Real-time listeners (מוגנים למקרה שאין DB)
+if(db){
+    db.ref('house_codes').on('value',function(s){data=s.val()?Object.values(s.val()):[];render();if(isAdmin)updateDashboard()},function(err){console.log("DB Error:",err)});
+    db.ref('pending_houses').on('value',function(s){pending=s.val()?Object.entries(s.val()):[];render();if(isAdmin)updateDashboard()},function(err){console.log("DB Error:",err)});
+}
 
 // ============================================================
 // AUTHENTICATION
@@ -459,7 +477,7 @@ function loginAdmin(){
         else if (error.code === 'auth/invalid-email') msg = '❌ אימייל לא תקין';
         else if (error.code === 'auth/invalid-credential') msg = '❌ אימייל או סיסמה שגויים';
         else if (error.code === 'auth/network-request-failed') msg = '❌ בעיית רשת - בדוק חיבור';
-        else if (error.code === 'auth/too-many-requests') msg = '⏳ болше מדי ניסיונות. המתן';
+        else if (error.code === 'auth/too-many-requests') msg = '⏳ יותר מדי ניסיונות. המתן';
         else msg = '❌ שגיאה: ' + error.code;
         
         toast(msg, '#ef4444');
@@ -520,15 +538,15 @@ function render(){var t=(document.getElementById('searchInput')?document.getElem
 
 function copyCode(el,code){if(!code)return;navigator.clipboard.writeText(code).catch(function(){});el.textContent=code;el.classList.add('copied');toast('📋 הקוד הועתק!');setTimeout(function(){el.textContent='••••';el.classList.remove('copied')},3000)}
 
-function addToCloud(){var addr=document.getElementById('f_address').value.trim();var code=document.getElementById('f_code').value.trim();var btn=document.getElementById('submitBtn');if(!addr)return toast('📌 מלא כתובת','#ef4444');if(!code)return toast('🔑 מלא קוד','#ef4444');if(code.length < 4 || code.length > 20){return toast('🔑 קוד חייב להיות 4-20 תווים','#ef4444');}if(data.some(function(i){return i.address===addr}))return toast('⚠️ כתובת זו כבר קיימת','#facc15');if(pending.some(function(item){return item[1].address===addr}))return toast('⏳ הכתובת כבר ממתינה לאישור','#facc15');btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> שולח...';var tempId=Date.now().toString();db.ref('pending_houses/'+tempId).set({id:tempId,address:addr,code:code}).then(function(){document.getElementById('f_address').value='';document.getElementById('f_code').value='';toast('☁️ נשלח לאישור מנהל');if(isAdmin)logActivity('הוספת קוד',addr+' - '+code)}).catch(function(){toast('❌ שגיאה בשליחה','#ef4444')}).finally(function(){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור'})}
+function addToCloud(){var addr=document.getElementById('f_address').value.trim();var code=document.getElementById('f_code').value.trim();var btn=document.getElementById('submitBtn');if(!addr)return toast('📌 מלא כתובת','#ef4444');if(!code)return toast('🔑 מלא קוד','#ef4444');if(code.length < 4 || code.length > 20){return toast('🔑 קוד חייב להיות 4-20 תווים','#ef4444');}if(data.some(function(i){return i.address===addr}))return toast('⚠️ כתובת זו כבר קיימת','#facc15');if(pending.some(function(item){return item[1].address===addr}))return toast('⏳ הכתובת כבר ממתינה לאישור','#facc15');if(!db){return toast('❌ אין חיבור למסד נתונים','#ef4444')}btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> שולח...';var tempId=Date.now().toString();db.ref('pending_houses/'+tempId).set({id:tempId,address:addr,code:code}).then(function(){document.getElementById('f_address').value='';document.getElementById('f_code').value='';toast('☁️ נשלח לאישור מנהל');if(isAdmin)logActivity('הוספת קוד',addr+' - '+code)}).catch(function(){toast('❌ שגיאה בשליחה','#ef4444')}).finally(function(){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> שלח לענן לאישור'})}
 
-function approvePending(id){var pair=pending.find(function(item){return item[0]===id});if(!pair)return;var p=pair[1],newId=Date.now().toString();db.ref('house_codes/'+newId).set({id:newId,address:p.address,code:p.code}).then(function(){db.ref('pending_houses/'+id).remove();toast('✅ אושר בהצלחה!');if(isAdmin)logActivity('אישור קוד',p.address+' - '+p.code)}).catch(function(){toast('❌ שגיאה באישור','#ef4444')})}
+function approvePending(id){var pair=pending.find(function(item){return item[0]===id});if(!pair)return;var p=pair[1],newId=Date.now().toString();if(!db)return;db.ref('house_codes/'+newId).set({id:newId,address:p.address,code:p.code}).then(function(){db.ref('pending_houses/'+id).remove();toast('✅ אושר בהצלחה!');if(isAdmin)logActivity('אישור קוד',p.address+' - '+p.code)}).catch(function(){toast('❌ שגיאה באישור','#ef4444')})}
 
 function editItem(id){var d=data.find(function(x){return x.id===id});if(!d)return toast('❌ רשומה לא נמצאה','#ef4444');showModal('<h3>✏️ עריכת רשומה</h3><input id="eAddr" value="'+sanitizeHTML(d.address)+'" placeholder="📌 כתובת" maxlength="200"><input id="eCode" value="'+sanitizeHTML(d.code)+'" placeholder="🔑 קוד" maxlength="20">','<button onclick="saveEdit(\''+escapeJS(id)+'\')" class="btn-success" style="width:100%;">💾 שמור</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
-function saveEdit(id){var addr=document.getElementById('eAddr').value.trim(),code=document.getElementById('eCode').value.trim();if(!addr)return toast('📌 מלא כתובת','#ef4444');if(!code)return toast('🔑 מלא קוד','#ef4444');if(code.length<4||code.length>20)return toast('🔑 קוד חייב להיות 4-20 תווים','#ef4444');db.ref('house_codes/'+id).update({address:addr,code:code}).then(function(){closeModal();toast('✅ עודכן!');if(isAdmin)logActivity('עריכת קוד',addr+' - '+code)}).catch(function(){toast('❌ שגיאה בעדכון','#ef4444')})}
+function saveEdit(id){var addr=document.getElementById('eAddr').value.trim(),code=document.getElementById('eCode').value.trim();if(!addr)return toast('📌 מלא כתובת','#ef4444');if(!code)return toast('🔑 מלא קוד','#ef4444');if(code.length<4||code.length>20)return toast('🔑 קוד חייב להיות 4-20 תווים','#ef4444');if(!db)return;db.ref('house_codes/'+id).update({address:addr,code:code}).then(function(){closeModal();toast('✅ עודכן!');if(isAdmin)logActivity('עריכת קוד',addr+' - '+code)}).catch(function(){toast('❌ שגיאה בעדכון','#ef4444')})}
 
 function confirmDelete(id,name){showModal('<h3>🗑️ מחיקה</h3><p>האם למחוק את <strong>'+sanitizeHTML(name)+'</strong>?</p><p style="font-size:13px;color:var(--text-muted);">פעולה זו אינה ניתנת לביטול</p>','<button onclick="deleteItem(\''+escapeJS(id)+'\')" class="btn-primary" style="width:100%;background:var(--danger);">🗑️ מחק</button><button onclick="closeModal()" class="btn-ghost" style="width:100%;">ביטול</button>')}
-function deleteItem(id){db.ref('house_codes/'+id).remove().then(function(){closeModal();toast('🗑️ נמחק!');if(isAdmin)logActivity('מחיקת קוד',id)}).catch(function(){toast('❌ שגיאה במחיקה','#ef4444')})}
+function deleteItem(id){if(!db)return;db.ref('house_codes/'+id).remove().then(function(){closeModal();toast('🗑️ נמחק!');if(isAdmin)logActivity('מחיקת קוד',id)}).catch(function(){toast('❌ שגיאה במחיקה','#ef4444')})}
 
 function changePage(dir){var total=data.filter(function(d){return(d.address||'').toLowerCase().includes((document.getElementById('searchInput')?document.getElementById('searchInput').value:'').toLowerCase())}).length;var totalPages=Math.ceil(total/itemsPerPage)||1;currentPage=Math.max(1,Math.min(currentPage+dir,totalPages));render();window.scrollTo({top:0,behavior:'smooth'})}
 function goToFirstPage(){currentPage=1;render();window.scrollTo({top:0,behavior:'smooth'})}
